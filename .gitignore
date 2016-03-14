@@ -156,12 +156,12 @@ $RECYCLE.BIN/
 # Mac desktop service store files
 .DS_Store
 
-ffmpeg\
-Resource\
-Shader\
-res\
-Media\
-Fonts\
+ffmpeg/
+Resource/
+Shader/
+res/
+Medi/
+Fonts/
 *.zip
 *.opendb
 *.diagsession

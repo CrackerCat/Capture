@@ -1,1 +1,0 @@
-config:x86:x86_32:generic:mingw32:gcc 5.3.0 (Rev1, Built by MSYS2 project):--prefix=./build --disable-ffmpeg --disable-ffplay --disable-doc --enable-shared
