@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Capture">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="RenderSystem">
+      <UniqueIdentifier>{db4a27e3-6fb7-4234-9f87-6b3f424e663f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CaptureTexture.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="CapturePlugin.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="CaptureHUB.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="GDICapture.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="CaptureInject.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryCapture.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicCapture.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureCapture.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="WinPlatform.h" />
+    <ClInclude Include="D3D11RenderSystem.hpp">
+      <Filter>RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraCapture.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GDICapture.cpp">
+      <Filter>Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="CaptureInject.cpp">
+      <Filter>Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryCapture.cpp">
+      <Filter>Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicCapture.cpp">
+      <Filter>Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D11RenderSystem.cpp">
+      <Filter>RenderSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureCapture.cpp">
+      <Filter>Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D11Texture.cpp">
+      <Filter>RenderSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraCapture.cpp">
+      <Filter>Capture</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

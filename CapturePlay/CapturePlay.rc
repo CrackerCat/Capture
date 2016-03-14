@@ -1,0 +1,384 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+#include "verrsrc.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (Simplified, PRC) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "#include ""verrsrc.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHT)\r\n"
+    "LANGUAGE 4, 1\r\n"
+    "#include ""res\\CapturePlay.rc2""  // ·Ç Microsoft Visual C++ ¾ŽÝ‹ß^µÄÙYÔ´\r\n"
+    "#include ""l.CHT\\afxres.rc""      // ˜ËœÊÔª¼þ\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_T DIALOGEX 0, 0, 320, 200
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,136,169,50,14
+    LISTBOX         IDC_LIST1,7,7,306,151,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_CAMERADIALOG DIALOGEX 0, 0, 320, 200
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,129,167,50,14
+    LISTBOX         IDC_LIST1,7,7,306,151,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_T, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 313
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 193
+    END
+
+    IDD_CAMERADIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 313
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 193
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_T AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_CAMERADIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Chinese (Simplified, PRC) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (Traditional, Taiwan) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHT)
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL
+#pragma code_page(950)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Ãö©ó CapturePlay"
+FONT 9, "????", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "CapturePlay, 1.0 ª©",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2016",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "½T©w",IDOK,113,41,50,14,WS_GROUP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\CapturePlay.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "ÀÉ®×(&F)"
+    BEGIN
+        MENUITEM "µ²§ô(&X)",                      ID_APP_EXIT
+    END
+    POPUP "½s¿è(&E)"
+    BEGIN
+        MENUITEM "´_­ì(&U)\tCtrl+Z",              ID_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "°Å¤U(&T)\tCtrl+X",              ID_EDIT_CUT
+        MENUITEM "½Æ»s(&C)\tCtrl+C",              ID_EDIT_COPY
+        MENUITEM "¶K¤W(&P)\tCtrl+V",              ID_EDIT_PASTE
+        MENUITEM "D3D9®·?",                      ID_D3D9_CAPTURE
+        MENUITEM "Desktop®·?",                   ID_DESKTOP_CAPTURE
+        MENUITEM "D3D11®·?",                     ID_D3D11_CAPTURE
+        MENUITEM "D3D10®·?",                     ID_D3D10_CAPTURE
+        MENUITEM "Game®·?",                      32781
+        MENUITEM "Camera®·?",                    ID_CAMERA_CAPTURE
+    END
+    POPUP "ÀËµø(&V)"
+    BEGIN
+        MENUITEM "ª¬ºA¦C(&S)",                     ID_VIEW_STATUS_BAR
+    END
+    POPUP "»¡©ú(&H)"
+    BEGIN
+        MENUITEM "Ãö©ó CapturePlay(&A)...",       ID_APP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS
+BEGIN
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT, NOINVERT
+    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT, NOINVERT
+    VK_F6,          ID_NEXT_PANE,           VIRTKEY, NOINVERT
+    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT, NOINVERT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT, NOINVERT
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL, NOINVERT
+    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040404B0"
+        BEGIN
+            VALUE "CompanyName", "TODO: <¤½¥q¦WºÙ>"
+            VALUE "FileDescription", "CapturePlay"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "CapturePlay.exe"
+            VALUE "LegalCopyright", "TODO: (c) <¤½¥q¦WºÙ>.  µÛ§@Åv©Ò¦³¡A¨Ã«O¯d¤@¤ÁÅv§Q¡C"
+            VALUE "OriginalFilename", "CapturePlay.exe"
+            VALUE "ProductName", "TODO: <²£«~¦WºÙ>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x404, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME           "CapturePlay"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_APP_TITLE       "CapturePlay"
+    AFX_IDS_IDLEMESSAGE     "´Nºü"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+END
+
+STRINGTABLE
+BEGIN
+    ID_APP_ABOUT            "Åã¥Üµ{¦¡¸ê°T¡Bª©¥»¸¹½X¤ÎµÛ§@Åv\nÃö©ó"
+    ID_APP_EXIT             "µ²§ôÀ³¥Îµ{¦¡; ´£¥Ü¨Ï¥ÎªÌÀx¦s¤å¥ó\nµ²§ô"
+END
+
+STRINGTABLE
+BEGIN
+    ID_NEXT_PANE            "¤Á´«¦Ü¤U¤@µ¡®æ\n¤U¤@­Óµ¡®æ"
+    ID_PREV_PANE            "¤Á´«¦Ü¤W¤@­Óµ¡®æ\n¤W¤@­Óµ¡®æ"
+END
+
+STRINGTABLE
+BEGIN
+    ID_WINDOW_SPLIT         "±N¨Ï¥Î¤¤µøµ¡¤Á³Î¦¨µ¡®æ\n¤À³Îµøµ¡"
+END
+
+STRINGTABLE
+BEGIN
+    ID_EDIT_CLEAR           "²M°£¿ï¨ú½d³ò\n²M°£"
+    ID_EDIT_CLEAR_ALL       "²M°£©Ò¦³ªº¶µ¥Ø\n¥þ³¡²M°£"
+    ID_EDIT_COPY            "½Æ»s¿ï¨ú¶µ¥Ø¨Ã©ñ¨ì°Å¶KÃ¯\n½Æ»s"
+    ID_EDIT_CUT             "°Å¤U¿ï¨ú¶µ¥Ø¨Ã©ñ¨ì°Å¶KÃ¯\n°Å¤U"
+    ID_EDIT_FIND            "´M§ä«ü©wªº¤å¦r\n´M§ä"
+    ID_EDIT_PASTE           "´¡¤J°Å¶KÃ¯ªº¤º®e\n¶K¤W"
+    ID_EDIT_REPEAT          "­«½Æ¤W¦¸ªº°Ê§@\n­«½Æ"
+    ID_EDIT_REPLACE         "¥Î¤£¦Pªº¤å¦r¨ú¥N«ü©w¤å¦r\n¨ú¥N"
+    ID_EDIT_SELECT_ALL      "¿ï¨ú¾ã¥÷¤å¥ó\n¥þ¿ï"
+    ID_EDIT_UNDO            "´_­ì¤W¦¸ªº°Ê§@\n´_­ì"
+    ID_EDIT_REDO            "¨ú®ø´_­ì¤W¦¸ªº°Ê§@\n¨ú®ø´_­ì"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_STATUS_BAR      "Åã¥Ü©ÎÁôÂÃª¬ºA¦C\n¤Á´«ª¬ºA¦C"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCSIZE          "ÅÜ§óµøµ¡¤j¤p"
+    AFX_IDS_SCMOVE          "ÅÜ§óµøµ¡¦ì¸m"
+    AFX_IDS_SCMINIMIZE      "±Nµøµ¡ÁY¦¨¤@­Ó¹Ï¥Ü"
+    AFX_IDS_SCMAXIMIZE      "±Nµøµ¡©ñ¨ì³Ì¤j"
+    AFX_IDS_SCNEXTWINDOW    "¤Á´«¦Ü¤U¤@­Ó¤å¥óµøµ¡"
+    AFX_IDS_SCPREVWINDOW    "¤Á´«¦Ü¤W¤@­Ó¤å¥óµøµ¡"
+    AFX_IDS_SCCLOSE         "Ãö³¬¨Ï¥Î¤¤µøµ¡¨Ã´£¥Ü¨Ï¥ÎªÌÀx¦s¤å¥ó"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCRESTORE       "±Nµøµ¡ÁÙ­ì¦¨¼Ð·Ç¤j¤p"
+    AFX_IDS_SCTASKLIST      "±Ò°Ê¤u§@²M³æ"
+END
+
+#endif    // Chinese (Traditional, Taiwan) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHT)
+LANGUAGE 4, 1
+#include "res\CapturePlay.rc2"  // ·Ç Microsoft Visual C++ ¾ŽÝ‹ß^µÄÙYÔ´
+#include "l.CHT\afxres.rc"      // ˜ËœÊÔª¼þ
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
