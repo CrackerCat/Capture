@@ -11,6 +11,7 @@
 
 #pragma warning(disable:4244)
 
+
 h3d::SWAPFORMAT D3D8ConvertFormat(D3DFORMAT);
 
 typedef LPDIRECT3D8(WINAPI* D3D8CREATEPROC)(UINT);

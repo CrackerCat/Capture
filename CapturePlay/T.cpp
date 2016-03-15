@@ -11,8 +11,8 @@
 
 IMPLEMENT_DYNAMIC(T, CDialog)
 
-T::T(std::vector<WindowData>& wins,CWnd* pParent /*=NULL*/)
-	:ref(wins), CDialog(IDD_T, pParent)
+T::T(std::vector<WindowData>& wins,const wchar_t* str_caption,CWnd* pParent /*=NULL*/)
+	:ref(wins), CDialog(IDD_T, pParent),caption(str_caption)
 {
 
 }
@@ -27,6 +27,9 @@ BOOL T::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 	CListBox* box =static_cast<CListBox*>(GetDlgItem(IDC_LIST1));
+
+	if (caption)
+		SetWindowTextW(caption);
 
 	int i = 0;
 	for (auto & win : ref)

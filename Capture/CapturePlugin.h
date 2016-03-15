@@ -7,6 +7,6 @@
 #define H3D_API __declspec(dllimport)
 #endif
 
-typedef unsigned __int64 SDst;
+typedef long SDst;
 typedef unsigned char byte;
 #endif

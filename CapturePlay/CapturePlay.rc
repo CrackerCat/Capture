@@ -68,7 +68,7 @@ END
 
 IDD_T DIALOGEX 0, 0, 320, 200
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Dialog"
+CAPTION "Ñ¡ÔñÔ´"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,136,169,50,14
@@ -195,19 +195,12 @@ BEGIN
     BEGIN
         MENUITEM "µ²§ô(&X)",                      ID_APP_EXIT
     END
-    POPUP "½s¿è(&E)"
+    POPUP "Capture"
     BEGIN
-        MENUITEM "´_­ì(&U)\tCtrl+Z",              ID_EDIT_UNDO
         MENUITEM SEPARATOR
-        MENUITEM "°Å¤U(&T)\tCtrl+X",              ID_EDIT_CUT
-        MENUITEM "½Æ»s(&C)\tCtrl+C",              ID_EDIT_COPY
-        MENUITEM "¶K¤W(&P)\tCtrl+V",              ID_EDIT_PASTE
-        MENUITEM "D3D9®·?",                      ID_D3D9_CAPTURE
-        MENUITEM "Desktop®·?",                   ID_DESKTOP_CAPTURE
-        MENUITEM "D3D11®·?",                     ID_D3D11_CAPTURE
-        MENUITEM "D3D10®·?",                     ID_D3D10_CAPTURE
-        MENUITEM "Game®·?",                      32781
-        MENUITEM "Camera®·?",                    ID_CAMERA_CAPTURE
+        MENUITEM "Game",                        ID_CAPTURE_GAME
+        MENUITEM "GDI",                         ID_CAPTURE_GDI
+        MENUITEM "Camera",                      32787, GRAYED
     END
     POPUP "ÀËµø(&V)"
     BEGIN

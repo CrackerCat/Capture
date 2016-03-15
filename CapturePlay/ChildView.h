@@ -20,12 +20,14 @@ public:
 public:
 	h3d::CaptureHUB* camera_capture;
 	h3d::CaptureHUB* game_capture;
+	h3d::CaptureHUB* gdi_capture;
 	HANDLE hKeepAlive;
 
 	CListCtrl cList;
 // 作業
 public:
 	BOOL IterWindow(HWND hwnd);
+	void FilterWindow(bool game = true);
 // 覆寫
 	protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
@@ -43,14 +45,12 @@ public:
 	// 產生的訊息對應函式
 protected:
 	afx_msg void OnPaint();
-	afx_msg void OnD3D9Capture();
-	afx_msg void OnDesktopCapture();
-	afx_msg void OnD3D11Capture();
-	afx_msg void OnD3D10Capture();
+	afx_msg void OnGDICapture();
 	afx_msg void OnGameCapture();
+	afx_msg void OnCameraCapture();
+
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnCameraCapture();
 };
 

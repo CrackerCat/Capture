@@ -81,9 +81,9 @@ void GDITexture::DumpBMP(const wchar_t* bmpfile)
 CaptureTexture::MappedData GDITexture::Map() {
 	GetDIBits(compatible_dc, target_bitmap, 0, cy, native, (LPBITMAPINFO)&BitMapInfoHeader, DIB_RGB_COLORS);
 
-	int pitch = ((cx * BitMapInfoHeader.biBitCount + 31) / 32) * 4;
+	unsigned long pitch = ((cx * BitMapInfoHeader.biBitCount + 31) / 32) * 4;
 
-	return{ native,static_cast<SDst>(pitch)};
+	return{ native,pitch};
 }
 
 void GDITexture::ReSize(SDst width, SDst height) {

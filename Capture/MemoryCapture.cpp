@@ -125,7 +125,7 @@ h3d::MemoryTexture::~MemoryTexture()
 
 h3d::MemoryTexture::MappedData h3d::MemoryTexture::Map()
 {
-	return{native,cx*4};
+	return{native,static_cast<unsigned long>(cx*4)};
 }
 
 void h3d::MemoryTexture::ReSize(SDst width, SDst height)
@@ -142,7 +142,9 @@ void h3d::MemoryTexture::WriteData(LPBYTE pData, int pitch)
 	sws_scale((SwsContext*)sws_context, &pData, &pitch, 0, cy, &native, &linear);
 }
 
+#ifndef _USING_V110_SDK71_
 #include <mfapi.h>
+#endif
 
 #include <fstream>
 extern std::ofstream logstream;
@@ -155,7 +157,10 @@ bool h3d::LoadPlugin() {
 	MemoryCapture::texture_mutexs[1] = CreateMutex(NULL, NULL, TEXTURE_SECOND_MUTEX);
 	if (!MemoryCapture::texture_mutexs[1])
 		return false;
+
+#ifndef _USING_V110_SDK71_
 	MFStartup(MF_VERSION);
+#endif
 
 	logstream.open("Capture.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 
@@ -169,5 +174,7 @@ void h3d::UnLoadPlugin() {
 	if (logstream.is_open())
 		logstream.close();
 
+#ifndef _USING_V110_SDK71_
 	MFShutdown();
+#endif
 }

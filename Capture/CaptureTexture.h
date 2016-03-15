@@ -16,7 +16,7 @@ namespace h3d
 
 		struct MappedData {
 			byte* pData;
-			SDst RowPitch;
+			unsigned long RowPitch;
 		};
 
 		virtual ~CaptureTexture() {}

@@ -19,10 +19,10 @@ class T : public CDialog
 	DECLARE_DYNAMIC(T)
 
 public:
-	T(std::vector<WindowData>&,CWnd* pParent = NULL);   // standard constructor
+	T(std::vector<WindowData>&,const wchar_t* str_caption = NULL,CWnd* pParent = NULL);   // standard constructor
 	virtual ~T();
 
-
+	const wchar_t* caption;
 	std::vector<WindowData>& ref;
 	int ref_index;
 // Dialog Data

@@ -1,26 +1,10 @@
-/********************************************************************************
-Copyright (C) 2012 Hugh Bailey <obs.jim@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-********************************************************************************/
-
-
 #include "CaptureHook.h"
+#include "Extern.h"
 #include <ddraw.h>
 
 using h3d::APIHook;
+using h3d::CaptureInfo;
+using h3d::MemoryInfo;
 
 APIHook ddrawSurfaceCreate;
 APIHook ddrawSurfaceFlip;
@@ -33,51 +17,55 @@ APIHook ddrawSurfaceLock;
 APIHook ddrawSurfaceUnlock;
 APIHook ddrawPaletteSetEntries;
 
-CaptureInfo ddrawCaptureInfo;
+CaptureInfo ddraw_captureinfo;
 
 #define NUM_BUFFERS 3
 #define ZERO_ARRAY {0, 0, 0}
 
-extern CRITICAL_SECTION ddrawMutex;
-extern LPBYTE           textureBuffers[2];
-extern MemoryCopyData   *copyData;
-extern DWORD            curCapture;
-extern HANDLE           hCopyThread;
-extern HANDLE           hCopyEvent;
-extern BOOL             bHasTextures;
-extern bool             bKillThread;
-extern DWORD            curCPUTexture;
-extern DWORD            copyWait;
-extern LONGLONG         lastTime;
+namespace {
+	CRITICAL_SECTION ddraw_mutex;
+	LPBYTE           tex_address[2];
+	MemoryInfo   *copy_info;
+	DWORD            curCapture;
+	HANDLE           copy_thread;
+	HANDLE           copy_event;
+	BOOL             has_texture;
+	bool             bKillThread;
+	DWORD            curCPUTexture;
+	DWORD            copy_wait;
+	LONGLONG         lastTime;
 
-bool bGotSurfaceDesc = false;
-bool bLockingSurface = false;
+	bool bGotSurfaceDesc = false;
+	bool bLockingSurface = false;
 
-DWORD g_dwSize = 0; // bytesize of buffers
-DWORD g_dwCaptureSize = 0; // bytesize of memory capture buffer
+	DWORD g_dwSize = 0; // bytesize of buffers
+	DWORD g_dwCaptureSize = 0; // bytesize of memory capture buffer
 
-LPDIRECTDRAWSURFACE7    ddCaptures[NUM_BUFFERS] = ZERO_ARRAY;
-HANDLE                  ddUnlockFctMutex = 0;
-LPDIRECTDRAWSURFACE7    g_frontSurface = NULL;
-LPDDSURFACEDESC2        g_surfaceDesc;
-LPDIRECTDRAW7           g_ddInterface = NULL;
-LPCTSTR                 mutexName = TEXT("Global\\ddUnlockFunctionMutex");
+	LPDIRECTDRAWSURFACE7    ddCaptures[NUM_BUFFERS] = ZERO_ARRAY;
+	HANDLE                  ddUnlockFctMutex = 0;
+	LPDIRECTDRAWSURFACE7    g_frontSurface = NULL;
+	LPDDSURFACEDESC2        g_surfaceDesc;
+	LPDIRECTDRAW7           g_ddInterface = NULL;
+	LPCTSTR                 mutexName = TEXT("Global\\ddUnlockFunctionMutex");
 
-BOOL g_bUseFlipMethod = false;
-BOOL g_bUse32bitCapture = false;
-BOOL g_bConvert16to32 = false;
-BOOL g_bUsePalette = false;
+	BOOL use_flip = false;
+	BOOL g_bUse32bitCapture = false;
+	BOOL g_bConvert16to32 = false;
+	BOOL g_bUsePalette = false;
 
+}
 HRESULT STDMETHODCALLTYPE Blt(LPDIRECTDRAWSURFACE7, LPRECT, LPDIRECTDRAWSURFACE7, LPRECT, DWORD, LPDDBLTFX);
 ULONG STDMETHODCALLTYPE Release(LPDIRECTDRAWSURFACE7 surface);
 void HookAll();
-void UnhookAll();
+void UnDoAll();
 
 unsigned int getCodeFromHRESULT(HRESULT hr)
 {
 	return (unsigned int)(((unsigned long)0xFFFF) & hr);
 }
 
+#include <string>
+#include <sstream>
 void printDDrawError(HRESULT err, const char* callerName = "")
 {
 	if (err == DD_OK)
@@ -150,12 +138,12 @@ void printDDrawError(HRESULT err, const char* callerName = "")
 	case DDERR_VIDEONOTACTIVE: s = "video port not active"; break;
 	case DDERR_WASSTILLDRAWING: s = "blit operation incomplete"; break;
 	case DDERR_WRONGMODE: s = "surface cannot be restored because it was created in a different mode"; break;
-	default: logOutput << "unknown error: " << getCodeFromHRESULT(err) << endl; return;
+	default:  logstream << "unknown error: " << getCodeFromHRESULT(err) << std::endl; return;
 	}
 
 	std::stringstream msg;
-	msg << CurrentTimeString() << callerName << " DDraw Error: " << s << "\n";
-	logOutput << msg.str();
+	msg << callerName << " DDraw Error: " << s << std::endl;
+	logstream << msg.str().c_str();
 }
 
 class Palette
@@ -208,9 +196,9 @@ public:
 		HANDLE mutexes[2];
 		for (int i = 0; i < 2; i++)
 		{
-			if (!DuplicateHandle(GetCurrentProcess(), textureMutexes[i], GetCurrentProcess(), &mutexes[i], NULL, FALSE, DUPLICATE_SAME_ACCESS))
+			if (!DuplicateHandle(GetCurrentProcess(), texture_mutex[i], GetCurrentProcess(), &mutexes[i], NULL, FALSE, DUPLICATE_SAME_ACCESS))
 			{
-				logOutput << CurrentTimeString() << "Palette::Free(): could not duplicate textureMutex handles, assuming OBS was closed and copy thread finished" << endl;
+				logstream << "Palette::Free(): could not duplicate textureMutex handles, assuming OBS was closed and copy thread finished" << std::endl;
 				bWait = false;
 				break;
 			}
@@ -240,13 +228,13 @@ public:
 			return;
 
 		HRESULT err;
-		ddrawPaletteSetEntries.Unhook();
+		ddrawPaletteSetEntries.UnDo();
 		if (FAILED(err = primary_surface_palette_ref->SetEntries(0, 0, numEntries, entries)))
 		{
-			logOutput << CurrentTimeString() << "ReloadPrimarySurfacePaletteEntries(): could not set entires" << endl;
+			logstream << "ReloadPrimarySurfacePaletteEntries(): could not set entires" << std::endl;
 			printDDrawError(err);
 		}
-		ddrawPaletteSetEntries.Rehook();
+		ddrawPaletteSetEntries.ReDo();
 	}
 
 } g_CurrentPalette;
@@ -255,26 +243,26 @@ bool SetupPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
 	if (!lpDDPalette)
 	{
-		//logOutput << CurrentTimeString() << "Detaching palette" << endl;
+		//logstream << "Detaching palette" << std::endl;
 		g_CurrentPalette.Free();
 		g_bUsePalette = false;
 		return false;
 	}
 
-	logOutput << CurrentTimeString() << "initializing palette" << endl;
+	logstream << "initializing palette" << std::endl;
 
 	DWORD caps;
 	HRESULT hr;
 	if (FAILED(hr = lpDDPalette->GetCaps(&caps)))
 	{
-		logOutput << CurrentTimeString() << "Failed to get palette caps" << endl;
+		logstream << "Failed to get palette caps" << std::endl;
 		printDDrawError(hr, "SetupPalette");
 		return false;
 	}
 
 	if (caps & DDPCAPS_8BITENTRIES)
 	{
-		logOutput << CurrentTimeString() << "8-bit index-palette used (lookup color is an index to another lookup table), not implemented" << endl;
+		logstream << "8-bit index-palette used (lookup color is an index to another lookup table), not implemented" << std::endl;
 		return false;
 	}
 
@@ -289,17 +277,17 @@ bool SetupPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 		numEntries = 0x02;
 	else
 	{
-		logOutput << CurrentTimeString() << "Unrecognized palette format" << endl;
+		logstream << "Unrecognized palette format" << std::endl;
 		return false;
 	}
 
-	//logOutput << CurrentTimeString() << "Trying to retrieve " << numEntries << " palette entries" << endl;
+	//logstream << "Trying to retrieve " << numEntries << " palette entries" << std::endl;
 
 	g_CurrentPalette.Reallocate(numEntries);
 	hr = lpDDPalette->GetEntries(0, 0, numEntries, g_CurrentPalette.entries);
 	if (FAILED(hr))
 	{
-		logOutput << CurrentTimeString() << "Failed to retrieve palette entries" << endl;
+		logstream << "Failed to retrieve palette entries" << std::endl;
 		printDDrawError(hr, "SetupPalette");
 		g_CurrentPalette.Free();
 		return false;
@@ -309,32 +297,31 @@ bool SetupPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	g_CurrentPalette.bInitialized = true;
 	g_bUsePalette = true;
 
-	logOutput << CurrentTimeString() << "Initialized palette with " << numEntries << " color entries" << endl;
+	logstream << "Initialized palette with " << numEntries << " color entries" << std::endl;
 
 	return true;
 }
 
 void CleanUpDDraw()
 {
-	logOutput << CurrentTimeString() << "Cleaning up" << endl;
-	if (copyData)
-		copyData->lastRendered = -1;
+	logstream << "Cleaning up" << std::endl;
 
-	if (hCopyThread)
+
+	if (copy_thread)
 	{
 		bKillThread = true;
-		SetEvent(hCopyEvent);
-		if (WaitForSingleObject(hCopyThread, 500) != WAIT_OBJECT_0)
-			TerminateThread(hCopyThread, -1);
+		SetEvent(copy_event);
+		if (WaitForSingleObject(copy_thread, 500) != WAIT_OBJECT_0)
+			TerminateThread(copy_thread, -1);
 
-		CloseHandle(hCopyThread);
-		CloseHandle(hCopyEvent);
+		CloseHandle(copy_thread);
+		CloseHandle(copy_event);
 
-		hCopyThread = NULL;
-		hCopyEvent = NULL;
+		copy_thread = NULL;
+		copy_event = NULL;
 	}
 
-	ddrawSurfaceRelease.Unhook();
+	ddrawSurfaceRelease.UnDo();
 	for (int i = 0; i < NUM_BUFFERS; i++)
 	{
 		if (ddCaptures[i])
@@ -343,20 +330,18 @@ void CleanUpDDraw()
 			ddCaptures[i] = NULL;
 		}
 	}
-	ddrawSurfaceRelease.Rehook();
+	ddrawSurfaceRelease.ReDo();
 
-	DestroySharedMemory();
+	h3d::DestroySharedMem();
 
-	bHasTextures = false;
+	has_texture = false;
 	curCapture = 0;
 	curCPUTexture = 0;
-	keepAliveTime = 0;
-	resetCount++;
-	copyWait = 0;
+	copy_wait = 0;
 	lastTime = 0;
 	g_frontSurface = NULL;
-	g_bUseFlipMethod = false;
-	bTargetAcquired = false;
+	use_flip = false;
+	target_acquired = false;
 	g_dwSize = 0;
 	g_bUse32bitCapture = false;
 	g_bConvert16to32 = false;
@@ -381,14 +366,13 @@ void CleanUpDDraw()
 		ddUnlockFctMutex = 0;
 	}
 
-	//UnhookAll();
 
-	logOutput << CurrentTimeString() << "---------------------- Cleared DirectDraw Capture ----------------------" << endl;
+	logstream << "---------------------- Cleared DirectDraw Capture ----------------------" << std::endl;
 }
 
 void handleBufferConversion(LPDWORD dst, LPBYTE src, LONG pitch)
 {
-	//logOutput << CurrentTimeString() << "trying to download buffer" << endl;
+	//logstream << "trying to download buffer" << std::endl;
 
 	DWORD advance = 0;
 
@@ -396,17 +380,17 @@ void handleBufferConversion(LPDWORD dst, LPBYTE src, LONG pitch)
 	{
 		if (!g_CurrentPalette.bInitialized)
 		{
-			logOutput << "current palette not initialized" << endl;
+			logstream << "current palette not initialized" << std::endl;
 			return;
 		}
 
-		//logOutput << "Using palette" << endl;
+		//logstream << "Using palette" << std::endl;
 
 		advance = pitch - g_surfaceDesc->dwWidth;
 
-		for (UINT y = 0; y < ddrawCaptureInfo.cy; y++)
+		for (UINT y = 0; y < ddraw_captureinfo.oHeight; y++)
 		{
-			for (UINT x = 0; x < ddrawCaptureInfo.cx; x++)
+			for (UINT x = 0; x < ddraw_captureinfo.oWidth; x++)
 			{
 				// use color lookup table
 				const PALETTEENTRY& entry = g_CurrentPalette.entries[*src];
@@ -420,14 +404,14 @@ void handleBufferConversion(LPDWORD dst, LPBYTE src, LONG pitch)
 	}
 	else if (g_bConvert16to32)
 	{
-		//logOutput << "Converting 16bit R5G6B5 to 32bit ARGB" << endl;
+		//logstream << "Converting 16bit R5G6B5 to 32bit ARGB" << std::endl;
 
 		advance = pitch / 2 - g_surfaceDesc->dwWidth;
 
 		LPWORD buf = (LPWORD)src;
-		for (UINT y = 0; y < ddrawCaptureInfo.cy; y++)
+		for (UINT y = 0; y < ddraw_captureinfo.oHeight; y++)
 		{
-			for (UINT x = 0; x < ddrawCaptureInfo.cx; x++)
+			for (UINT x = 0; x < ddraw_captureinfo.oWidth; x++)
 			{
 				// R5G6B5 format
 				WORD pxl = *buf;
@@ -443,7 +427,7 @@ void handleBufferConversion(LPDWORD dst, LPBYTE src, LONG pitch)
 	{
 		// no conversion needed
 		UINT width = 4 * g_surfaceDesc->dwWidth;
-		for (UINT y = 0; y < ddrawCaptureInfo.cy; y++)
+		for (UINT y = 0; y < ddraw_captureinfo.oHeight; y++)
 		{
 			memcpy(dst, src, width);
 			dst += g_surfaceDesc->dwWidth;
@@ -454,31 +438,31 @@ void handleBufferConversion(LPDWORD dst, LPBYTE src, LONG pitch)
 
 inline HRESULT STDMETHODCALLTYPE UnlockSurface(LPDIRECTDRAWSURFACE7 surface, LPRECT data)
 {
-	//logOutput << CurrentTimeString() << "Called UnlockSurface" << endl;
+	//logstream << "Called UnlockSurface" << std::endl;
 
 	// standard handler
-	if (!bTargetAcquired)
+	if (!target_acquired)
 	{
-		ddrawSurfaceUnlock.Unhook();
+		ddrawSurfaceUnlock.UnDo();
 		HRESULT hr = surface->Unlock(data);
-		ddrawSurfaceUnlock.Rehook();
+		ddrawSurfaceUnlock.ReDo();
 		return hr;
 	}
 
-	// use mutex lock to prevent memory corruption when calling Unhook/Rehook from multiple threads
+	// use mutex lock to prevent memory corruption when calling UnDo/ReDo from multiple threads
 	HANDLE mutex = OpenMutex(SYNCHRONIZE, FALSE, mutexName);
 	if (!mutex)
 	{
-		logOutput << CurrentTimeString() << "Could not open mutex - Error(" << GetLastError() << ')' << endl;
+		logstream << "Could not open mutex - Error(" << GetLastError() << ')' << std::endl;
 		return DDERR_GENERIC;
 	}
 
 	DWORD ret = WaitForSingleObject(mutex, INFINITE);
 	if (ret == WAIT_OBJECT_0)
 	{
-		ddrawSurfaceUnlock.Unhook();
+		ddrawSurfaceUnlock.UnDo();
 		HRESULT hr = surface->Unlock(data);
-		ddrawSurfaceUnlock.Rehook();
+		ddrawSurfaceUnlock.ReDo();
 
 		ReleaseMutex(mutex);
 		CloseHandle(mutex);
@@ -486,165 +470,48 @@ inline HRESULT STDMETHODCALLTYPE UnlockSurface(LPDIRECTDRAWSURFACE7 surface, LPR
 	}
 	else
 	{
-		logOutput << CurrentTimeString() << "error while waiting for unlock-mutex to get signaled" << endl;
-		logOutput << CurrentTimeString() << "GetLastError: " << GetLastError() << endl;
+		logstream << "error while waiting for unlock-mutex to get signaled" << std::endl;
+		logstream << "GetLastError: " << GetLastError() << std::endl;
 		CloseHandle(mutex);
 		return DDERR_GENERIC;
 	}
 }
 
-/*
-void CopyTextures(LPDIRECTDRAWSURFACE7 src)
-{
-static int sharedMemID = 0;
-int nextSharedMemID = sharedMemID == 0 ? 1 : 0;
-
-DWORD copyTex = curCPUTexture;
-if(copyTex < NUM_BUFFERS)
-{
-//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: processing data" << endl;
-int lastRendered = -1;
-
-//copy to whichever is available
-if(WaitForSingleObject(textureMutexes[sharedMemID], 0) == WAIT_OBJECT_0)
-lastRendered = (int)sharedMemID;
-else if(WaitForSingleObject(textureMutexes[nextSharedMemID], 0) == WAIT_OBJECT_0)
-lastRendered = (int)nextSharedMemID;
-
-if(lastRendered != -1)
-{
-//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: copying to memfile" << endl;
-HRESULT err;
-DDSURFACEDESC2 desc;
-desc.dwSize = sizeof(desc);
-DWORD flags = DDLOCK_WAIT | DDLOCK_READONLY;
-logOutput << CurrentTimeString() << "CopyTexture: locking surface" << endl;
-if(SUCCEEDED(err = src->Lock(NULL, &desc, flags, NULL)))
-{
-logOutput << CurrentTimeString() << "CopyTexture: converting buffer" << endl;
-handleBufferConversion((LPDWORD)textureBuffers[lastRendered], (LPBYTE)desc.lpSurface, desc.lPitch);
-logOutput << CurrentTimeString() << "CopyTexture: unlocking surface" << endl;
-UnlockSurface(src, NULL);
-logOutput << CurrentTimeString() << "CopyTexture: done" << endl;
-}
-else
-{
-RUNEVERYRESET logOutput << CurrentTimeString() << "CopyDDrawTextureThread: failed to lock capture surface" << endl;
-printDDrawError(err);
-}
-ReleaseMutex(textureMutexes[lastRendered]);
-copyData->lastRendered = (UINT)lastRendered;
-}
-}
-
-sharedMemID = nextSharedMemID;
-//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: waiting for event" << endl;
-}
-*/
-
+#include "DXGI_D3D10_D3D11.h"
 void CaptureDDraw()
 {
-	//RUNEVERYRESET logOutput << CurrentTimeString() << "called CaptureDDraw()" << endl;
+	//RUNEVERYRESET logstream << "called CaptureDDraw()" << std::endl;
 
-	if (bCapturing && WaitForSingleObject(hSignalEnd, 0) == WAIT_OBJECT_0)
-	{
-		//logOutput << CurrentTimeString() << "not capturing or received hSignalEnd" << endl;
-		bStopRequested = true;
-	}
+	h3d::EventProcess();
 
-	if (bCapturing && !IsWindow(hwndOBS))
-	{
-		//logOutput << CurrentTimeString() << "not capturing or OBS window not found" << endl;
-		hwndOBS = NULL;
-		bStopRequested = true;
-	}
-
-	if (bStopRequested)
-	{
+	if (!capture_run) {
 		CleanUpDDraw();
-		bCapturing = false;
-		bStopRequested = false;
 	}
 
-	if (!bCapturing && WaitForSingleObject(hSignalRestart, 0) == WAIT_OBJECT_0)
-	{
-		//logOutput << CurrentTimeString() << "capturing and received hSignalRestart" << endl;
-		hwndOBS = FindWindow(OBS_WINDOW_CLASS, NULL);
-		if (hwndOBS) {
-			logOutput << CurrentTimeString() << "received restart event, capturing" << endl;
-			bCapturing = true;
-		}
-		else {
-			logOutput << CurrentTimeString() << "received restart event, but couldn't find window" << endl;
-		}
-	}
+	KeepAliveProcess(CleanUpDDraw())
 
-	LONGLONG timeVal = OSGetTimeMicroseconds();
-
-	//check keep alive state, dumb but effective
-	if (bCapturing)
-	{
-		if (!keepAliveTime)
-			keepAliveTime = timeVal;
-
-		if ((timeVal - keepAliveTime) > 5000000)
+		if (has_texture && capture_run)
 		{
-			HANDLE hKeepAlive = OpenEvent(EVENT_ALL_ACCESS, FALSE, strKeepAlive.c_str());
-			if (hKeepAlive) {
-				CloseHandle(hKeepAlive);
-			}
-			else {
-				logOutput << CurrentTimeString() << "Keepalive no longer found on ddraw, freeing capture data" << endl;
-				CleanUpDDraw();
-				bCapturing = false;
-			}
+			//todo mantian fps
 
-			keepAliveTime = timeVal;
-		}
-	}
-
-	if (bHasTextures)
-	{
-		LONGLONG frameTime;
-		if (bCapturing)
-		{
-			if (copyData)
+			HRESULT hr;
+			ddrawSurfaceBlt.UnDo();
+			hr = ddCaptures[curCapture]->Blt(NULL, g_frontSurface, NULL, DDBLT_ASYNC, NULL);
+			ddrawSurfaceBlt.ReDo();
+			if (SUCCEEDED(hr))
 			{
-				if (frameTime = copyData->frameTime)
-				{
-					LONGLONG timeElapsed = timeVal - lastTime;
+				DWORD nextCapture = (curCapture == NUM_BUFFERS - 1) ? 0 : (curCapture + 1);
+				curCPUTexture = curCapture;
+				curCapture = nextCapture;
 
-					if (timeElapsed >= frameTime)
-					{
-						lastTime += frameTime;
-						if (timeElapsed > frameTime * 2)
-							lastTime = timeVal;
-
-
-						//logOutput << CurrentTimeString() << "CaptureDDraw: capturing screen from 0x" << g_frontSurface << endl;
-
-						HRESULT hr;
-						ddrawSurfaceBlt.Unhook();
-						hr = ddCaptures[curCapture]->Blt(NULL, g_frontSurface, NULL, DDBLT_ASYNC, NULL);
-						ddrawSurfaceBlt.Rehook();
-						if (SUCCEEDED(hr))
-						{
-							DWORD nextCapture = (curCapture == NUM_BUFFERS - 1) ? 0 : (curCapture + 1);
-							curCPUTexture = curCapture;
-							curCapture = nextCapture;
-
-							SetEvent(hCopyEvent);
-						}
-						else
-						{
-							printDDrawError(hr, "CaptureDDraw");
-						}
-						//logOutput << CurrentTimeString() << "CaptureDDraw: finished capturing" << endl;
-					}
-				}
+				SetEvent(copy_event);
 			}
+			else
+			{
+				printDDrawError(hr, "CaptureDDraw");
+			}
+
 		}
-	}
 }
 
 DWORD CopyDDrawTextureThread(LPVOID lpUseless)
@@ -652,19 +519,16 @@ DWORD CopyDDrawTextureThread(LPVOID lpUseless)
 	int sharedMemID = 0;
 
 	HANDLE hEvent = NULL;
-	if (!DuplicateHandle(GetCurrentProcess(), hCopyEvent, GetCurrentProcess(), &hEvent, NULL, FALSE, DUPLICATE_SAME_ACCESS))
+	if (!DuplicateHandle(GetCurrentProcess(), copy_event, GetCurrentProcess(), &hEvent, NULL, FALSE, DUPLICATE_SAME_ACCESS))
 	{
-		logOutput << CurrentTimeString() << "CopyDDrawTextureThread: couldn't duplicate event handle - " << GetLastError() << endl;
+		logstream << "CopyDDrawTextureThread: couldn't duplicate event handle - " << GetLastError() << std::endl;
 		return 0;
 	}
 
-	std::stringstream msg;
-	msg << CurrentTimeString() << "CopyDDrawTextureThread: waiting for copyEvents\n";
-	logOutput << msg.str();
-	msg.str("");
+	logstream <<"CopyDDrawTextureThread: waiting for copyEvents"<<std::endl;
 	while (WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0)
 	{
-		//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: received copyEvent" << endl;
+		//logstream << "CopyDDrawTextureThread: received copyEvent" << std::endl;
 		if (bKillThread)
 			break;
 
@@ -673,54 +537,45 @@ DWORD CopyDDrawTextureThread(LPVOID lpUseless)
 		DWORD copyTex = curCPUTexture;
 		if (copyTex < NUM_BUFFERS)
 		{
-			//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: processing data" << endl;
+			//logstream << "CopyDDrawTextureThread: processing data" << std::endl;
 			int lastRendered = -1;
 
 			//copy to whichever is available
-			if (WaitForSingleObject(textureMutexes[sharedMemID], 0) == WAIT_OBJECT_0)
+			if (WaitForSingleObject(texture_mutex[sharedMemID], 0) == WAIT_OBJECT_0)
 				lastRendered = (int)sharedMemID;
-			else if (WaitForSingleObject(textureMutexes[nextSharedMemID], 0) == WAIT_OBJECT_0)
+			else if (WaitForSingleObject(texture_mutex[nextSharedMemID], 0) == WAIT_OBJECT_0)
 				lastRendered = (int)nextSharedMemID;
 
 			if (lastRendered != -1)
 			{
-				//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: copying to memfile" << endl;
+				//logstream << "CopyDDrawTextureThread: copying to memfile" << std::endl;
 				HRESULT err;
 				DDSURFACEDESC2 desc;
 				desc.dwSize = sizeof(desc);
 				DWORD flags = DDLOCK_WAIT | DDLOCK_READONLY | DDLOCK_NOSYSLOCK;
-				//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: locking buffer" << endl;
+				//logstream << "CopyDDrawTextureThread: locking buffer" << std::endl;
 				if (SUCCEEDED(err = ddCaptures[copyTex]->Lock(NULL, &desc, flags, NULL)))
 				{
-					//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: converting buffer" << endl;
-					handleBufferConversion((LPDWORD)textureBuffers[lastRendered], (LPBYTE)desc.lpSurface, desc.lPitch);
-					//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: unlocking buffer" << endl;
+					handleBufferConversion((LPDWORD)tex_address[lastRendered], (LPBYTE)desc.lpSurface, desc.lPitch);
 					if (FAILED(err = ddCaptures[copyTex]->Unlock(NULL)))
 					{
 						printDDrawError(err, "CopyDDrawTextureThread");
 					}
-					/*
-					else
-					logOutput << CurrentTimeString() << "CopyDDrawTextureThread: done" << endl;
-					*/
-					//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: finished uploading" << endl;
+					
 				}
 				else
 				{
-					RUNEVERYRESET logOutput << CurrentTimeString() << "CopyDDrawTextureThread: failed to lock capture surface" << endl;
 					printDDrawError(err, "CopyDDrawTextureThread");
 				}
-				ReleaseMutex(textureMutexes[lastRendered]);
-				copyData->lastRendered = (UINT)lastRendered;
+				ReleaseMutex(texture_mutex[lastRendered]);
+				copy_info->Reserved3 = (UINT)lastRendered;
 			}
 		}
 
 		sharedMemID = nextSharedMemID;
-		//logOutput << CurrentTimeString() << "CopyDDrawTextureThread: waiting for event" << endl;
 	}
 
-	msg << CurrentTimeString() << "CopyDDrawTextureThread: killed\n";
-	logOutput << msg.str();
+	logstream << "CopyDDrawTextureThread: killed"<<std::endl;
 
 	CloseHandle(hEvent);
 	return 0;
@@ -728,11 +583,11 @@ DWORD CopyDDrawTextureThread(LPVOID lpUseless)
 
 bool SetupDDraw()
 {
-	logOutput << CurrentTimeString() << "called SetupDDraw()" << endl;
+	logstream << "called SetupDDraw()" << std::endl;
 
 	if (!g_ddInterface)
 	{
-		logOutput << CurrentTimeString() << "SetupDDraw: DirectDraw interface not set, returning" << endl;
+		logstream << "SetupDDraw: DirectDraw interface not set, returning" << std::endl;
 		return false;
 	}
 
@@ -740,17 +595,17 @@ bool SetupDDraw()
 
 	bKillThread = false;
 
-	if (hCopyThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CopyDDrawTextureThread, NULL, 0, NULL))
+	if (copy_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CopyDDrawTextureThread, NULL, 0, NULL))
 	{
-		if (!(hCopyEvent = CreateEvent(NULL, FALSE, FALSE, NULL)))
+		if (!(copy_event = CreateEvent(NULL, FALSE, FALSE, NULL)))
 		{
-			logOutput << CurrentTimeString() << "SetupDDraw: CreateEvent failed, GetLastError = " << GetLastError() << endl;
+			logstream << "SetupDDraw: CreateEvent failed, GetLastError = " << GetLastError() << std::endl;
 			bSuccess = false;
 		}
 	}
 	else
 	{
-		logOutput << CurrentTimeString() << "SetupDDraw: CreateThread failed, GetLastError = " << GetLastError() << endl;
+		logstream << "SetupDDraw: CreateThread failed, GetLastError = " << GetLastError() << std::endl;
 		bSuccess = false;
 	}
 
@@ -761,7 +616,6 @@ bool SetupDDraw()
 			ddUnlockFctMutex = CreateMutex(NULL, FALSE, mutexName);
 			if (!ddUnlockFctMutex)
 			{
-				RUNEVERYRESET logOutput << CurrentTimeString() << "SetupDDraw: CreateMutex failed, GetLastError = " << GetLastError() << endl;
 				bSuccess = false;
 			}
 		}
@@ -769,7 +623,6 @@ bool SetupDDraw()
 
 	if (bSuccess && !g_frontSurface)
 	{
-		RUNEVERYRESET logOutput << "SetupDDraw: frontSurface and surface descriptor not set, returning" << endl;
 		CleanUpDDraw();
 		return false;
 	}
@@ -784,18 +637,18 @@ bool SetupDDraw()
 		}
 		else if (err == DDERR_NOPALETTEATTACHED)
 		{
-			//logOutput << CurrentTimeString() << "No palette attached to primary surface" << endl;
+			//logstream << "No palette attached to primary surface" << std::endl;
 		}
 		else
 		{
-			logOutput << CurrentTimeString() << "Error retrieving palette" << endl;
+			logstream << "Error retrieving palette" << std::endl;
 			printDDrawError(err, "getFrontSurface");
 		}
 	}
 
 	if (bSuccess && !g_surfaceDesc)
 	{
-		logOutput << CurrentTimeString() << "SetupDDraw: no surface descriptor found, creating a new one (not an error)" << endl;
+		logstream << "SetupDDraw: no surface descriptor found, creating a new one (not an error)" << std::endl;
 
 		g_surfaceDesc = new DDSURFACEDESC2;
 		g_surfaceDesc->dwSize = sizeof(DDSURFACEDESC);
@@ -806,7 +659,7 @@ bool SetupDDraw()
 			g_surfaceDesc->dwSize = sizeof(DDSURFACEDESC2);
 			if (FAILED(g_frontSurface->GetSurfaceDesc(g_surfaceDesc)))
 			{
-				logOutput << CurrentTimeString() << "SetupDDraw: error getting surface descriptor" << endl;
+				logstream << "SetupDDraw: error getting surface descriptor" << std::endl;
 				printDDrawError(hr, "SetupDDraw");
 				bSuccess = false;
 			}
@@ -820,36 +673,33 @@ bool SetupDDraw()
 		{
 			if (pf.dwRGBBitCount == 16)
 			{
-				logOutput << CurrentTimeString() << "SetupDDraw: found 16bit format (using R5G6B5 conversion)" << endl;
+				logstream << "SetupDDraw: found 16bit format (using R5G6B5 conversion)" << std::endl;
 				g_bConvert16to32 = true;
 			}
 			else if (pf.dwRGBBitCount == 32)
 			{
-				logOutput << CurrentTimeString() << "SetupDDraw: found 32bit format (using plain copy)" << endl;
+				logstream << "SetupDDraw: found 32bit format (using plain copy)" << std::endl;
 				g_bUse32bitCapture = true;
 			}
 		}
 		else if (pf.dwFlags & (DDPF_PALETTEINDEXED8 | DDPF_PALETTEINDEXED4 | DDPF_PALETTEINDEXED2 | DDPF_PALETTEINDEXED1))
 		{
-			logOutput << CurrentTimeString() << "SetupDDraw: front surface uses palette indices" << endl;
+			logstream << "SetupDDraw: front surface uses palette indices" << std::endl;
 		}
 	}
 
 	if (bSuccess)
 	{
-		logOutput << CurrentTimeString() << "SetupDDraw: primary surface width = " << g_surfaceDesc->dwWidth << ", height = " << g_surfaceDesc->dwHeight << endl;
+		logstream << "SetupDDraw: primary surface width = " << g_surfaceDesc->dwWidth << ", height = " << g_surfaceDesc->dwHeight << std::endl;
 		g_dwSize = g_surfaceDesc->lPitch*g_surfaceDesc->dwHeight;
-		ddrawCaptureInfo.captureType = CAPTURETYPE_MEMORY;
-		ddrawCaptureInfo.cx = g_surfaceDesc->dwWidth;
-		ddrawCaptureInfo.cy = g_surfaceDesc->dwHeight;
-		ddrawCaptureInfo.pitch = 4 * ddrawCaptureInfo.cx;
-		ddrawCaptureInfo.hwndCapture = (DWORD)hwndSender;
-		ddrawCaptureInfo.format = GS_BGRA;
-		DWORD g_dwCaptureSize = ddrawCaptureInfo.pitch*ddrawCaptureInfo.cy;
-		ddrawCaptureInfo.bFlip = FALSE;
-		ddrawCaptureInfo.mapID = InitializeSharedMemoryCPUCapture(g_dwCaptureSize, &ddrawCaptureInfo.mapSize, &copyData, textureBuffers);
+		ddraw_captureinfo.oWidth = g_surfaceDesc->dwWidth;
+		ddraw_captureinfo.oHeight = g_surfaceDesc->dwHeight;
+		ddraw_captureinfo.Reserved4 = 4 * ddraw_captureinfo.oWidth;
+		ddraw_captureinfo.Reserved1 = h3d::BGRA8;
+		DWORD g_dwCaptureSize = ddraw_captureinfo.Reserved4*ddraw_captureinfo.oHeight;
+		ddraw_captureinfo.Reserved2 = h3d::CtorSharedMemCPUCapture(g_dwCaptureSize,ddraw_captureinfo.Reserved3,copy_info, tex_address);
 
-		memcpy(infoMem, &ddrawCaptureInfo, sizeof(CaptureInfo));
+		memcpy(ptr_capture_info, &ddraw_captureinfo, sizeof(CaptureInfo));
 
 		DDSURFACEDESC2 captureDesc;
 		ZeroMemory(&captureDesc, sizeof(captureDesc));
@@ -864,38 +714,37 @@ bool SetupDDraw()
 
 		HRESULT err;
 
-		ddrawSurfaceCreate.Unhook();
+		ddrawSurfaceCreate.UnDo();
 		for (int i = 0; i < NUM_BUFFERS && bSuccess; i++)
 		{
 			if (FAILED(err = g_ddInterface->CreateSurface(&captureDesc, &ddCaptures[i], NULL)))
 			{
-				logOutput << CurrentTimeString() << "SetupDDraw: Could not create offscreen capture" << endl;
+				logstream << "SetupDDraw: Could not create offscreen capture" << std::endl;
 				printDDrawError(err, "SetupDDraw");
 				bSuccess = false;
 				break;
 			}
 		}
-		ddrawSurfaceCreate.Rehook();
+		ddrawSurfaceCreate.ReDo();
 
 		if (bSuccess)
 		{
-			bHasTextures = true;
+			has_texture = true;
 
-			SetEvent(hSignalReady);
+			SetEvent(hReadyEvent);
 
-			OSInitializeTimer();
 		}
 	}
 
 	if (bSuccess)
 	{
-		logOutput << CurrentTimeString() << "SetupDDraw successfull" << endl;
+		logstream << "SetupDDraw successfull" << std::endl;
 		HookAll();
 		return true;
 	}
 	else
 	{
-		logOutput << CurrentTimeString() << "SetupDDraw failed" << endl;
+		logstream << "SetupDDraw failed" << std::endl;
 		CleanUpDDraw();
 		return false;
 	}
@@ -906,11 +755,11 @@ bool SetupDDraw()
 // returns false if frontSurface is NULL and lpDDSurface is not primary
 bool getFrontSurface(LPDIRECTDRAWSURFACE7 lpDDSurface)
 {
-	//logOutput << CurrentTimeString() << "called getFrontSurface" << endl;
+	//logstream << "called getFrontSurface" << std::endl;
 
 	if (!lpDDSurface)
 	{
-		//logOutput << CurrentTimeString() << "lpDDSurface null" << endl;
+		//logstream << "lpDDSurface null" << std::endl;
 		return false;
 	}
 
@@ -923,35 +772,35 @@ bool getFrontSurface(LPDIRECTDRAWSURFACE7 lpDDSurface)
 			HRESULT err;
 			if (FAILED(err = dummy->GetDDInterface((LPVOID*)&Unknown)))
 			{
-				logOutput << CurrentTimeString() << "getFrontSurface: could not get DirectDraw interface" << endl;
+				logstream << "getFrontSurface: could not get DirectDraw interface" << std::endl;
 				printDDrawError(err, "getFrontSurface");
 			}
 			else
 			{
 				if (Unknown->QueryInterface(IID_IDirectDraw7, (LPVOID*)&g_ddInterface) == S_OK)
 				{
-					logOutput << CurrentTimeString() << "Got DirectDraw interface pointer" << endl;
+					logstream << "Got DirectDraw interface pointer" << std::endl;
 				}
 				else
 				{
-					logOutput << CurrentTimeString() << "Query of DirectDraw interface failed" << endl;
+					logstream << "Query of DirectDraw interface failed" << std::endl;
 				}
 			}
-			ddrawSurfaceRelease.Unhook();
+			ddrawSurfaceRelease.UnDo();
 			dummy->Release();
-			ddrawSurfaceRelease.Rehook();
+			ddrawSurfaceRelease.ReDo();
 		}
 	}
 
-	if (!bTargetAcquired)
+	if (!target_acquired)
 	{
 		DDSCAPS2 caps;
 		if (SUCCEEDED(lpDDSurface->GetCaps(&caps)))
 		{
-			//logOutput << CurrentTimeString() << "checking if surface is primary" << endl;
+			//logstream << "checking if surface is primary" << std::endl;
 			if (caps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 			{
-				logOutput << CurrentTimeString() << "found primary surface" << endl;
+				logstream << "found primary surface" << std::endl;
 				g_frontSurface = lpDDSurface;
 				if (!SetupDDraw())
 				{
@@ -959,13 +808,13 @@ bool getFrontSurface(LPDIRECTDRAWSURFACE7 lpDDSurface)
 				}
 				else
 				{
-					bTargetAcquired = true;
+					target_acquired = true;
 				}
 			}
 		}
 		else
 		{
-			logOutput << CurrentTimeString() << "could not retrieve caps" << endl;
+			logstream << "could not retrieve caps" << std::endl;
 		}
 	}
 
@@ -976,11 +825,11 @@ HRESULT STDMETHODCALLTYPE Unlock(LPDIRECTDRAWSURFACE7 surface, LPRECT data)
 {
 	HRESULT hr;
 
-	//logOutput << CurrentTimeString() << "Hooked Unlock()" << endl;
+	//logstream << "Hooked Unlock()" << std::endl;
 
-	EnterCriticalSection(&ddrawMutex);
+	EnterCriticalSection(&ddraw_mutex);
 
-	//UnlockSurface handles the actual unlocking and un-/rehooks the method (as well as thread synchronisation)
+	//UnlockSurface handles the actual unlocking and un-/ReDos the method (as well as thread synchronisation)
 	hr = UnlockSurface(surface, data);
 
 	if (getFrontSurface(surface))
@@ -988,22 +837,22 @@ HRESULT STDMETHODCALLTYPE Unlock(LPDIRECTDRAWSURFACE7 surface, LPRECT data)
 		// palette fix, should be tested on several machines
 		if (g_bUsePalette && g_CurrentPalette.bInitialized)
 			//g_CurrentPalette.ReloadPrimarySurfacePaletteEntries();
-			if (!g_bUseFlipMethod)
+			if (!use_flip)
 				CaptureDDraw();
 	}
 
-	LeaveCriticalSection(&ddrawMutex);
+	LeaveCriticalSection(&ddraw_mutex);
 
 	return hr;
 }
 
 HRESULT STDMETHODCALLTYPE SetPalette(LPDIRECTDRAWSURFACE7 surface, LPDIRECTDRAWPALETTE lpDDPalette)
 {
-	//logOutput << CurrentTimeString() << "Hooked SetPalette()" << endl;
+	//logstream << "Hooked SetPalette()" << std::endl;
 
-	ddrawSurfaceSetPalette.Unhook();
+	ddrawSurfaceSetPalette.UnDo();
 	HRESULT hr = surface->SetPalette(lpDDPalette);
-	ddrawSurfaceSetPalette.Rehook();
+	ddrawSurfaceSetPalette.ReDo();
 
 	if (getFrontSurface(surface))
 	{
@@ -1017,11 +866,11 @@ HRESULT STDMETHODCALLTYPE SetPalette(LPDIRECTDRAWSURFACE7 surface, LPDIRECTDRAWP
 
 HRESULT STDMETHODCALLTYPE PaletteSetEntries(LPDIRECTDRAWPALETTE palette, DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
 {
-	//logOutput << CurrentTimeString() << "Hooked SetEntries()" << endl;
+	//logstream << "Hooked SetEntries()" << std::endl;
 
-	ddrawPaletteSetEntries.Unhook();
+	ddrawPaletteSetEntries.UnDo();
 	HRESULT hr = palette->SetEntries(dwFlags, dwStartingEntry, dwCount, lpEntries);
-	ddrawPaletteSetEntries.Rehook();
+	ddrawPaletteSetEntries.ReDo();
 
 	// update buffer palette
 	if (SUCCEEDED(hr))
@@ -1037,29 +886,29 @@ HRESULT STDMETHODCALLTYPE PaletteSetEntries(LPDIRECTDRAWPALETTE palette, DWORD d
 
 HRESULT STDMETHODCALLTYPE CreateSurface(IDirectDraw7* ddInterface, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPDIRECTDRAWSURFACE7 *lplpDDSurface, IUnknown *pUnkOuter)
 {
-	//logOutput << CurrentTimeString() << "Hooked CreateSurface()" << endl;
+	//logstream << "Hooked CreateSurface()" << std::endl;
 
 	if (!g_ddInterface)
 	{
 		if (ddInterface->QueryInterface(IID_IDirectDraw, (LPVOID*)&g_ddInterface) == S_OK)
 		{
-			logOutput << CurrentTimeString() << "IDirectDraw::CreateSurface: got DDInterface pointer" << endl;
+			logstream << "IDirectDraw::CreateSurface: got DDInterface pointer" << std::endl;
 		}
 		else
 		{
-			logOutput << CurrentTimeString() << "IDirectDraw::CreateSurface: could not query DirectDraw interface" << endl;
+			logstream << "IDirectDraw::CreateSurface: could not query DirectDraw interface" << std::endl;
 		}
 	}
 
-	ddrawSurfaceCreate.Unhook();
+	ddrawSurfaceCreate.UnDo();
 	HRESULT hRes = ddInterface->CreateSurface(lpDDSurfaceDesc, lplpDDSurface, pUnkOuter);
-	ddrawSurfaceCreate.Rehook();
+	ddrawSurfaceCreate.ReDo();
 
 	if (hRes == DD_OK)
 	{
 		if (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
 		{
-			logOutput << CurrentTimeString() << "IDirectDraw::CreateSurface: Primary surface created at 0x" << *lplpDDSurface << endl;
+			logstream << "IDirectDraw::CreateSurface: Primary surface created at 0x" << *lplpDDSurface << std::endl;
 			getFrontSurface(*lplpDDSurface);
 		}
 	}
@@ -1071,34 +920,34 @@ HRESULT STDMETHODCALLTYPE CreateSurface(IDirectDraw7* ddInterface, LPDDSURFACEDE
 
 ULONG STDMETHODCALLTYPE Release(LPDIRECTDRAWSURFACE7 surface)
 {
-	//logOutput << CurrentTimeString() << "Hooked Release()" << endl;
+	//logstream << "Hooked Release()" << std::endl;
 
-	ddrawSurfaceRelease.Unhook();
+	ddrawSurfaceRelease.UnDo();
 	/*
 	if(surface == g_frontSurface)
 	{
-	logOutput << CurrentTimeString() << "Releasing primary surface 0x" << surface << endl;
+	logstream << "Releasing primary surface 0x" << surface << std::endl;
 	surface->AddRef();
 	ULONG refCount = surface->Release();
 
 	if(refCount == 1)
 	{
-	logOutput << CurrentTimeString() << "Freeing primary surface" << endl;
+	logstream << "Freeing primary surface" << std::endl;
 	g_frontSurface = NULL;
-	bTargetAcquired = false;
+	target_acquired = false;
 	CleanUpDDraw();
 	}
 	}
 	*/
 
 	ULONG refCount = surface->Release();
-	ddrawSurfaceRelease.Rehook();
+	ddrawSurfaceRelease.ReDo();
 
 	if (surface == g_frontSurface)
 	{
 		if (refCount == 0)
 		{
-			logOutput << CurrentTimeString() << "Freeing primary surface" << endl;
+			logstream << "Freeing primary surface" << std::endl;
 			CleanUpDDraw();
 		}
 	}
@@ -1108,23 +957,22 @@ ULONG STDMETHODCALLTYPE Release(LPDIRECTDRAWSURFACE7 surface)
 
 HRESULT STDMETHODCALLTYPE Restore(LPDIRECTDRAWSURFACE7 surface)
 {
-	//logOutput << CurrentTimeString() << "Hooked Restore()" << endl;
 
-	ddrawSurfaceRestore.Unhook();
+	ddrawSurfaceRestore.UnDo();
 	HRESULT hr = surface->Restore();
 
-	if (bHasTextures)
+	if (has_texture)
 	{
 		if (surface == g_frontSurface)
 		{
-			logOutput << CurrentTimeString() << "SurfaceRestore: restoring offscreen buffers" << endl;
+			logstream << "SurfaceRestore: restoring offscreen buffers" << std::endl;
 			bool success = true;
 			for (UINT i = 0; i < NUM_BUFFERS; i++)
 			{
 				HRESULT err;
 				if (FAILED(err = ddCaptures[i]->Restore()))
 				{
-					logOutput << CurrentTimeString() << "SurfaceRestore: error restoring offscreen buffer" << endl;
+					logstream << "SurfaceRestore: error restoring offscreen buffer" << std::endl;
 					printDDrawError(err, "Restore");
 					success = false;
 				}
@@ -1135,9 +983,9 @@ HRESULT STDMETHODCALLTYPE Restore(LPDIRECTDRAWSURFACE7 surface)
 			}
 		}
 	}
-	ddrawSurfaceRestore.Rehook();
+	ddrawSurfaceRestore.ReDo();
 
-	if (!bHasTextures)
+	if (!has_texture)
 	{
 		getFrontSurface(surface);
 	}
@@ -1147,41 +995,39 @@ HRESULT STDMETHODCALLTYPE Restore(LPDIRECTDRAWSURFACE7 surface)
 
 HRESULT STDMETHODCALLTYPE Flip(LPDIRECTDRAWSURFACE7 surface, LPDIRECTDRAWSURFACE7 lpDDSurface, DWORD flags)
 {
-	//logOutput << CurrentTimeString() << "Hooked Flip()" << endl;
 
 	HRESULT hr;
 
-	EnterCriticalSection(&ddrawMutex);
+	EnterCriticalSection(&ddraw_mutex);
 
-	ddrawSurfaceFlip.Unhook();
+	ddrawSurfaceFlip.UnDo();
 	hr = surface->Flip(lpDDSurface, flags);
-	ddrawSurfaceFlip.Rehook();
+	ddrawSurfaceFlip.ReDo();
 
-	g_bUseFlipMethod = true;
+	use_flip = true;
 
 	if (getFrontSurface(surface))
 	{
 		CaptureDDraw();
 	}
 
-	LeaveCriticalSection(&ddrawMutex);
+	LeaveCriticalSection(&ddraw_mutex);
 
 	return hr;
 }
 
 HRESULT STDMETHODCALLTYPE Blt(LPDIRECTDRAWSURFACE7 surface, LPRECT lpDestRect, LPDIRECTDRAWSURFACE7 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx)
 {
-	//logOutput << CurrentTimeString() << "Hooked Blt()" << endl;
 
-	EnterCriticalSection(&ddrawMutex);
+	EnterCriticalSection(&ddraw_mutex);
 
-	ddrawSurfaceBlt.Unhook();
+	ddrawSurfaceBlt.UnDo();
 	HRESULT hr = surface->Blt(lpDestRect, lpDDSrcSurface, lpSrcRect, dwFlags, lpDDBltFx);
-	ddrawSurfaceBlt.Rehook();
+	ddrawSurfaceBlt.ReDo();
 
 	if (SUCCEEDED(hr))
 	{
-		if (!g_bUseFlipMethod)
+		if (!use_flip)
 		{
 			if (getFrontSurface(surface))
 			{
@@ -1190,105 +1036,88 @@ HRESULT STDMETHODCALLTYPE Blt(LPDIRECTDRAWSURFACE7 surface, LPRECT lpDestRect, L
 		}
 	}
 
-	LeaveCriticalSection(&ddrawMutex);
+	LeaveCriticalSection(&ddraw_mutex);
 
 	return hr;
 }
 
-void UnhookAll()
+void UnDoAll()
 {
-	ddrawSurfaceCreate.Unhook();
-	ddrawSurfaceRestore.Unhook();
-	ddrawSurfaceRelease.Unhook();
-	ddrawSurfaceSetPalette.Unhook();
-	ddrawPaletteSetEntries.Unhook();
+	ddrawSurfaceCreate.UnDo();
+	ddrawSurfaceRestore.UnDo();
+	ddrawSurfaceRelease.UnDo();
+	ddrawSurfaceSetPalette.UnDo();
+	ddrawPaletteSetEntries.UnDo();
 }
 
 typedef HRESULT(WINAPI *CREATEDIRECTDRAWEXPROC)(GUID*, LPVOID*, REFIID, IUnknown*);
 
+#include "../Capture/WinPlatform.h"
+
 bool InitDDrawCapture()
 {
+	using h3d::PTR;
 	bool versionSupported = false;
 	HMODULE hDDrawLib = NULL;
 	if (hDDrawLib = GetModuleHandle(TEXT("ddraw.dll")))
 	{
-		bool isWinVistaMin = IsWindowsVistaOrGreater();
-		bool isWin7min = IsWindows7OrGreater();
-		bool isWin8min = IsWindows8OrGreater();
+		bool isWin7min = h3d::GetOSVersion() >= 7;
+		bool isWin8min = h3d::GetOSVersion() >= 8;
 
-		UPARAM libBaseAddr = UPARAM(hDDrawLib);
-		UPARAM surfCreateOffset;
-		UPARAM surfUnlockOffset;
-		UPARAM surfReleaseOffset;
-		UPARAM surfRestoreOffset;
-		UPARAM surfBltOffset;
-		UPARAM surfFlipOffset;
-		UPARAM surfSetPaletteOffset;
-		UPARAM palSetEntriesOffset;
+		PTR libBaseAddr = PTR(hDDrawLib);
+		PTR surfCreateOffset;
+		PTR surfUnlockOffset;
+		PTR surfReleaseOffset;
+		PTR surfRestoreOffset;
+		PTR surfBltOffset;
+		PTR surfFlipOffset;
+		PTR surfSetPaletteOffset;
+		PTR palSetEntriesOffset;
 
-		if (isWinVistaMin)
+
+		if (isWin7min && !isWin8min)
 		{
-			if (!isWin7min)
-			{
-				RUNEVERYRESET logOutput << CurrentTimeString() << "DirectDraw capture: Windows Vista not supported yet" << endl;
-			}
-			else if (isWin7min && !isWin8min)
-			{
-				surfCreateOffset = 0x617E;
-				surfUnlockOffset = 0x4C40;
-				surfReleaseOffset = 0x3239;
-				surfRestoreOffset = 0x3E9CB;
-				surfBltOffset = surfCreateOffset + 0x44F63;
-				surfFlipOffset = surfCreateOffset + 0x37789;
-				surfSetPaletteOffset = surfCreateOffset + 0x4D2D3;
-				palSetEntriesOffset = surfCreateOffset + 0x4CE68;
-				versionSupported = true;
-			}
-			else if (isWin8min)
-			{
-				surfCreateOffset = 0x9530 + 0xC00;
-				surfUnlockOffset = surfCreateOffset + 0x2A1D0;
-				surfReleaseOffset = surfCreateOffset - 0x1A80;
-				surfRestoreOffset = surfCreateOffset + 0x36000;
-				surfBltOffset = surfCreateOffset + 0x438DC;
-				surfFlipOffset = surfCreateOffset + 0x33EF3;
-				surfSetPaletteOffset = surfCreateOffset + 0x4D3B8;
-				palSetEntriesOffset = surfCreateOffset + 0x4CF4C;
-				versionSupported = false;	// some crash bugs remaining
-
-				RUNEVERYRESET logOutput << CurrentTimeString() << "DirectDraw capture: Windows 8 not supported yet" << endl;
-			}
-			else
-			{
-				RUNEVERYRESET logOutput << CurrentTimeString() << "DirectDraw capture: Unknown OS version" << endl;
-			}
+			surfCreateOffset = 0x617E;
+			surfUnlockOffset = 0x4C40;
+			surfReleaseOffset = 0x3239;
+			surfRestoreOffset = 0x3E9CB;
+			surfBltOffset = surfCreateOffset + 0x44F63;
+			surfFlipOffset = surfCreateOffset + 0x37789;
+			surfSetPaletteOffset = surfCreateOffset + 0x4D2D3;
+			palSetEntriesOffset = surfCreateOffset + 0x4CE68;
+			versionSupported = true;
 		}
-		else
+		else if (isWin8min)
 		{
-			RUNEVERYRESET logOutput << CurrentTimeString() << "OS version not supported" << endl;
+			surfCreateOffset = 0x9530 + 0xC00;
+			surfUnlockOffset = surfCreateOffset + 0x2A1D0;
+			surfReleaseOffset = surfCreateOffset - 0x1A80;
+			surfRestoreOffset = surfCreateOffset + 0x36000;
+			surfBltOffset = surfCreateOffset + 0x438DC;
+			surfFlipOffset = surfCreateOffset + 0x33EF3;
+			surfSetPaletteOffset = surfCreateOffset + 0x4D3B8;
+			palSetEntriesOffset = surfCreateOffset + 0x4CF4C;
+			versionSupported = true;	// some crash bugs remaining
 		}
+
 
 		if (versionSupported)
 		{
-			ddrawSurfaceCreate.Hook((FARPROC)(libBaseAddr + surfCreateOffset), (FARPROC)CreateSurface);
-			ddrawSurfaceRestore.Hook((FARPROC)(libBaseAddr + surfRestoreOffset), (FARPROC)Restore);
-			ddrawSurfaceRelease.Hook((FARPROC)(libBaseAddr + surfReleaseOffset), (FARPROC)Release);
-			ddrawSurfaceUnlock.Hook((FARPROC)(libBaseAddr + surfUnlockOffset), (FARPROC)Unlock);
-			ddrawSurfaceBlt.Hook((FARPROC)(libBaseAddr + surfBltOffset), (FARPROC)Blt);
-			ddrawSurfaceFlip.Hook((FARPROC)(libBaseAddr + surfFlipOffset), (FARPROC)Flip);
-			ddrawSurfaceSetPalette.Hook((FARPROC)(libBaseAddr + surfSetPaletteOffset), (FARPROC)SetPalette);
-			ddrawPaletteSetEntries.Hook((FARPROC)(libBaseAddr + palSetEntriesOffset), (FARPROC)PaletteSetEntries);
+			ddrawSurfaceCreate.Do((FARPROC)(libBaseAddr + surfCreateOffset), (FARPROC)CreateSurface);
+			ddrawSurfaceRestore.Do((FARPROC)(libBaseAddr + surfRestoreOffset), (FARPROC)Restore);
+			ddrawSurfaceRelease.Do((FARPROC)(libBaseAddr + surfReleaseOffset), (FARPROC)Release);
+			ddrawSurfaceSetPalette.Do((FARPROC)(libBaseAddr + surfSetPaletteOffset), (FARPROC)SetPalette);
+			ddrawPaletteSetEntries.Do((FARPROC)(libBaseAddr + palSetEntriesOffset), (FARPROC)PaletteSetEntries);
 
-			ddrawSurfaceUnlock.Rehook();
-			ddrawSurfaceFlip.Rehook();
-			ddrawSurfaceBlt.Rehook();
-			/*
-			ddrawSurfaceCreate.Rehook();
-			ddrawSurfaceRestore.Rehook();
-			ddrawSurfaceRelease.Rehook();
-			ddrawSurfaceSetPalette.Rehook();
-			ddrawPaletteSetEntries.Rehook();
-			*/
+			ddrawSurfaceCreate.UnDo();
+			ddrawSurfaceRestore.UnDo();
+			ddrawSurfaceRelease.UnDo();
+			ddrawSurfaceSetPalette.UnDo();
+			ddrawPaletteSetEntries.UnDo();
+
+			ddrawSurfaceUnlock.Do((FARPROC)(libBaseAddr + surfUnlockOffset), (FARPROC)Unlock);
+			ddrawSurfaceBlt.Do((FARPROC)(libBaseAddr + surfBltOffset), (FARPROC)Blt);
+			ddrawSurfaceFlip.Do((FARPROC)(libBaseAddr + surfFlipOffset), (FARPROC)Flip);
 		}
 	}
 
@@ -1297,18 +1126,18 @@ bool InitDDrawCapture()
 
 void HookAll()
 {
-	ddrawSurfaceCreate.Rehook();
-	ddrawSurfaceRestore.Rehook();
-	ddrawSurfaceRelease.Rehook();
-	ddrawSurfaceSetPalette.Rehook();
-	ddrawPaletteSetEntries.Rehook();
+	ddrawSurfaceCreate.ReDo();
+	ddrawSurfaceRestore.ReDo();
+	ddrawSurfaceRelease.ReDo();
+	ddrawSurfaceSetPalette.ReDo();
+	ddrawPaletteSetEntries.ReDo();
 }
 
 void CheckDDrawCapture()
 {
-	EnterCriticalSection(&ddrawMutex);
-	ddrawSurfaceUnlock.Rehook(true);
-	ddrawSurfaceFlip.Rehook(true);
-	ddrawSurfaceBlt.Rehook(true);
-	LeaveCriticalSection(&ddrawMutex);
+	EnterCriticalSection(&ddraw_mutex);
+	ddrawSurfaceUnlock.ReDo(true);
+	ddrawSurfaceFlip.ReDo(true);
+	ddrawSurfaceBlt.ReDo(true);
+	LeaveCriticalSection(&ddraw_mutex);
 }

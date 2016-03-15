@@ -1,12 +1,16 @@
+#include "CameraCapture.h"
+using namespace h3d;
+#ifndef _USING_V110_SDK71_
+
 #include <mfapi.h>
 #include <mfidl.h>
 #include <Mfreadwrite.h>
 
 #include <assert.h>
 
-#include "CameraCapture.h"
 
-using namespace h3d;
+
+
 
 std::list<CameraInfo> h3d::GetCameraInfos()
 {
@@ -146,6 +150,33 @@ CaptureTexture * h3d::CameraCapture::Capture()
 	return pTex;
 }
 
+
+
+#endif
+
+#ifdef _USING_V110_SDK71_
+
+std::list<CameraInfo> h3d::GetCameraInfos() {
+	return std::list<CameraInfo>();
+}
+
+CameraCapture::CameraCapture(CaptureInfo & info, unsigned int Index, CaptureCallBack callback)
+	:capture_info(info), opt_callbak(callback) {
+}
+
+CameraCapture::~CameraCapture()
+{
+}
+
+CaptureTexture * h3d::CameraCapture::Capture()
+{
+	return nullptr;
+}
+
+#endif
+
 void h3d::CameraCapture::Stop()
 {
 }
+
+

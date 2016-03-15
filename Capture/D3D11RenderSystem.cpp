@@ -1,7 +1,10 @@
 #include "D3D11RenderSystem.hpp"
 #include "WinPlatform.h"
 #include <stdexcept>
+
+#ifndef _USING_V110_SDK71_
 #include <dxgi1_2.h>
+#endif
 
 typedef HRESULT(WINAPI*DXGICREATEPROC)(REFIID riid, void ** ppFactory);
 typedef HRESULT(WINAPI*D3D11PROC)(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, D3D_FEATURE_LEVEL*, UINT, UINT, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D11Device** ppDevice, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** ppImmediateContext);
@@ -26,7 +29,11 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 	int version = GetOSVersion();
 	//7 CreateDXGIFactory1
 	//8 CreateDXGIFactory2
+#ifndef _USING_V110_SDK71_
 	REFIID iid = version >= 8 ? __uuidof(IDXGIFactory2) : __uuidof(IDXGIFactory1);
+#else
+	REFIID iid = __uuidof(IUnknown);//xp不应该执行成功
+#endif
 
 	DXGICREATEPROC CreateDXGI = (DXGICREATEPROC)GetProcAddress(hDXGIDll, "CreateDXGIFactory1");
 
@@ -142,8 +149,8 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, un
 {
 	HANDLE hShare = reinterpret_cast<HANDLE>(Handle);
 
-	ID3D10Resource* share_res = NULL;
-	if (SUCCEEDED(device->OpenSharedResource(hShare, __uuidof(ID3D10Resource), reinterpret_cast<void**>(&share_res)))) {
+	ID3D11Resource* share_res = NULL;
+	if (SUCCEEDED(device->OpenSharedResource(hShare, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&share_res)))) {
 		ID3D11Texture2D* share_tex = NULL;
 		if (SUCCEEDED(share_res->QueryInterface(&share_tex))) {
 			share_res->Release();

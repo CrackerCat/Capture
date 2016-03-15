@@ -72,8 +72,8 @@ namespace h3d {
 	void H3D_API UnLoadPlugin();
 }
 
-#define INFO_MEMORY             L"Global\\H3DInfoMemory"
-#define TEXTURE_MEMORY          L"Global\\H3DTextureMemory"
+#define INFO_MEMORY             L"Local\\H3DInfoMemory"
+#define TEXTURE_MEMORY          L"Local\\H3DTextureMemory"
 
 #define TEXTURE_FIRST_MUTEX     L"H3DTextureFirstMutex"
 #define TEXTURE_SECOND_MUTEX     L"H3DTextureSecondMutex"

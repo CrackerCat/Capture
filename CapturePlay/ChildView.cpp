@@ -37,13 +37,10 @@ CChildView::~CChildView()
 
 BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_PAINT()
-	ON_COMMAND(ID_D3D9_CAPTURE,&CChildView::OnD3D9Capture)
-	ON_COMMAND(ID_DESKTOP_CAPTURE,&CChildView::OnDesktopCapture)
-	ON_COMMAND(ID_D3D11_CAPTURE,&CChildView::OnD3D11Capture)
-	ON_COMMAND(ID_D3D10_CAPTURE,&CChildView::OnD3D10Capture)
-	ON_COMMAND(ID_GAME_CAPTURE,&CChildView::OnGameCapture)
+	ON_COMMAND(ID_CAPTURE_GDI, &CChildView::OnGDICapture)
+	ON_COMMAND(ID_CAPTURE_GAME,&CChildView::OnGameCapture)
+	ON_COMMAND(ID_CAPTURE_CAMERA, &CChildView::OnCameraCapture)
 	ON_WM_TIMER()
-	ON_COMMAND(ID_CAMERA_CAPTURE, &CChildView::OnCameraCapture)
 END_MESSAGE_MAP()
 
 
@@ -64,6 +61,7 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 
 	return TRUE;
 }
+#include "../Capture/GDICapture.h"
 
 #pragma warning(disable:4018)
 void CChildView::OnPaint() 
@@ -141,6 +139,11 @@ void CChildView::OnPaint()
 
 		dc.StretchBlt(0,0, texture->GetWidth(), texture->GetHeight(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
 	}
+
+	if (gdi_capture) {
+		h3d::GDITexture* texture = static_cast<h3d::GDITexture*>(gdi_capture->Capture());
+		StretchBlt(dc,0, texture->GetHeight(), texture->GetWidth(), -texture->GetHeight(), texture->GetDC(), 0, 0,texture->GetWidth() ,texture->GetHeight(),SRCCOPY);
+	}
 }
 
 
@@ -207,43 +210,42 @@ void CChildView::GameCapture(DWORD processId)
 	SetTimer(PAINT_TIMER,40, 0);
 }
 
-void CChildView::OnD3D9Capture()
-{
-	GameCapture(FindProcess(L"D3D9.exe"));
-}
 
-#include "../Capture/GDICapture.h"
-
-void CChildView::OnDesktopCapture()
-{
-	/*CRect rect;
-	GetWindowRect(&rect);
-
-	if (capture)
-		h3d::EndCapture(capture);
-	hKeepAlive = NULL;
-
-	h3d::CaptureInfo info;
-	info.oHeight = rect.Height();
-	info.oWidth = rect.Width();
-	info.sNative = NULL;
-
-	capture = new h3d::GDICapture(info);*/
-}
-
-void CChildView::OnD3D11Capture()
-{
-	GameCapture(FindProcess(L"D3D11.exe"));
-}
-
-void CChildView::OnD3D10Capture()
-{
-	GameCapture(FindProcess(L"D3D10.exe"));
-}
 
 BOOL __stdcall EnumVisibleWindow(HWND hwnd, LPARAM lParam) {
 	return reinterpret_cast<CChildView*>(lParam)->IterWindow(hwnd);
 }
+
+
+void CChildView::OnGDICapture()
+{
+	//枚举窗口
+	windows.clear();
+	windows.emplace_back(L"桌面", ::GetDesktopWindow());
+	EnumWindows(EnumVisibleWindow, (LPARAM)this);
+	//显示列表
+	T box(windows, L"请选择GDI源");
+	box.DoModal();
+	//开始抓取
+	if (box.ref_index != LB_ERR) {
+		auto& window = windows[box.ref_index];
+
+		CRect rect;
+		GetWindowRect(&rect);
+
+		h3d::CaptureInfo info;
+		info.oHeight = rect.Height();
+		info.oWidth = rect.Width();
+		info.sNative =reinterpret_cast<unsigned __int64>(window.hWnd);
+
+		if (gdi_capture)
+			delete gdi_capture;
+		gdi_capture = new h3d::GDICapture(info);
+		SetTimer(PAINT_TIMER, 40, 0);
+	}
+	
+}
+
 
 const wchar_t* special_game_windowname[] = {
 	L"battlefield"
@@ -324,6 +326,13 @@ BOOL CChildView::IterWindow(HWND hwnd)
 	return TRUE;
 }
 
+
+void CChildView::FilterWindow(bool game)
+{
+	if (!game)
+		windows.emplace_back( L"桌面",::GetDesktopWindow());
+}
+
 #include "T.h"
 
 void CChildView::OnGameCapture()
@@ -332,7 +341,7 @@ void CChildView::OnGameCapture()
 	windows.clear();
 	EnumWindows(EnumVisibleWindow,(LPARAM)this);
 	//显示列表
-	T box(windows);
+	T box(windows,L"请选择游戏源");
 	box.DoModal();
 	//开始抓取
 	if (box.ref_index != LB_ERR) {

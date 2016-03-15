@@ -5,11 +5,14 @@
 #include <string>
 #include <list>
 namespace h3d {
+#pragma warning(push)
+#pragma warning(disable:4251)
 	struct H3D_API CameraInfo
 	{
 		std::wstring Name;
 		unsigned int Index;
 	};
+#pragma warning(pop)
 
 	H3D_API std::list<CameraInfo> GetCameraInfos();
 
