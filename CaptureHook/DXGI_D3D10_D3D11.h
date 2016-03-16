@@ -19,11 +19,9 @@ namespace h3d {
 	void D3D10Flush();
 	void D3D10CaptureSetup(IDXGISwapChain*);
 
+	//todo :check format
 	inline SWAPFORMAT ConvertFormat(DXGI_FORMAT format) {
 		switch (format) {
-		case DXGI_FORMAT_R8G8B8A8_UNORM:
-		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-			return RGBA8;
 		case DXGI_FORMAT_B8G8R8A8_UNORM:
 		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
 			return BGRA8;
@@ -44,35 +42,6 @@ namespace h3d {
 
 		return format;
 	}
-
-	inline void EventProcess() {
-		if (capture_run && WaitForSingleObject(hStopEvent, 0) == WAIT_OBJECT_0) {
-			capture_run = false;
-			logstream << "received stop event" << std::endl;
-		}
-
-		if (!capture_run && WaitForSingleObject(hBeginEvent, 0) == WAIT_OBJECT_0) {
-			capture_run = true;
-			logstream << "received begin(restart) event " << std::endl;
-		}
-	}
-
-#define KeepAliveProcess(clear_statement) if (capture_run) { \
-	static LONGLONG prev_point = h3d::GetOSMillSeconds(); \
-		LONGLONG capture_tp = h3d::GetOSMillSeconds(); \
-		if(capture_tp - prev_point > KEEP_TIME_DURATION) {\
-				HANDLE keepAlive = OpenEventW(EVENT_ALL_ACCESS, FALSE, sKeepAlive.c_str()); \
-				if (keepAlive)\
-					CloseHandle(keepAlive); \
-				else {\
-						clear_statement; \
-						logstream << "Don't Exist Event[" <<sKeepAlive<<"] (OBS Process Unexpected Exit,Wait Next Begin Event)" << std::endl; \
-						capture_run = false; \
-				}\
-				prev_point = capture_tp; \
-		}\
-	}
-
 
 	inline void CapturSetup(CaptureInfo& info, DXGI_FORMAT& format,bool & open_msaa,IDXGISwapChain* pSwapChain) {
 		DXGI_SWAP_CHAIN_DESC swapDesc;

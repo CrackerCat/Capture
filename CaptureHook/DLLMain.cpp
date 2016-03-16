@@ -29,8 +29,10 @@ HANDLE hCaptureThread = NULL;
 
 HANDLE hInfoMap = NULL;
 
+#include "../Capture/WinPlatform.h"
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved) {
 	if (dwReason == DLL_PROCESS_ATTACH) {
+		SetUnhandledExceptionFilter(h3d::GPTUnhandledExceptionFilter);
 		logstream.open("CaptureHookDebug.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 		hDllInstance = hInstance;
 		h3d::InitCaptureHook();
@@ -153,11 +155,12 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 	wss.swap(std::wstringstream());
 	wss << EVENT_OBS_BEGIN << currproces_id;
 	hBeginEvent = GetEvent(wss.str().c_str());
+	logstream << "Create Begin Event : " << wss.str() << std::endl;
 
 	wss.swap(std::wstringstream());
 	wss << OBS_KEEP_ALIVE << currproces_id;
 	sKeepAlive = wss.str();
-
+	logstream << "Create KeepAlive Event : " << sKeepAlive << std::endl;
 	//可以考虑从共享内存读出想要的信息
 
 	//插入一些锁逻辑

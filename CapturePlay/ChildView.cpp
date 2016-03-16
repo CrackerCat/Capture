@@ -11,13 +11,14 @@
 #define new DEBUG_NEW
 #endif
 
+std::ofstream logstream;
 
 // CChildView
 
 CChildView::CChildView()
 :game_capture(NULL),camera_capture(NULL), hKeepAlive(NULL)
 {
-	//cList.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	logstream.open("CapturePlay.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 }
 
 
@@ -32,6 +33,9 @@ CChildView::~CChildView()
 
 	if (hKeepAlive)
 		CloseHandle(hKeepAlive);
+
+	if (logstream.is_open())
+		logstream.close();
 }
 
 
@@ -68,7 +72,9 @@ void CChildView::OnPaint()
 {
 	CPaintDC dc(this); // 繪製的裝置內容
 
-	
+	CRect rect;
+	GetWindowRect(&rect);
+
 	if (camera_capture) {
 		h3d::CaptureTexture*  texture = camera_capture->Capture();
 
@@ -97,8 +103,6 @@ void CChildView::OnPaint()
 		Bitmap.Attach(hBitmap);
 		Dc.SelectObject(&Bitmap);
 
-		CRect rect;
-		GetWindowRect(&rect);
 		//坑爹HBITMAP坐标系 源开始
 		dc.StretchBlt(0,rect.Height(), rect.Width(),-rect.Height(), &Dc, 0,0,texture->GetWidth(),texture->GetHeight(),SRCCOPY);
 	}
@@ -134,15 +138,14 @@ void CChildView::OnPaint()
 		Bitmap.Attach(hBitmap);
 		Dc.SelectObject(&Bitmap);
 
-		CRect rect;
-		GetWindowRect(&rect);
+		
 
 		dc.StretchBlt(0,0, texture->GetWidth(), texture->GetHeight(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
 	}
 
 	if (gdi_capture) {
 		h3d::GDITexture* texture = static_cast<h3d::GDITexture*>(gdi_capture->Capture());
-		StretchBlt(dc,0, texture->GetHeight(), texture->GetWidth(), -texture->GetHeight(), texture->GetDC(), 0, 0,texture->GetWidth() ,texture->GetHeight(),SRCCOPY);
+		StretchBlt(dc,0, rect.Height(), rect.Width(), -rect.Height(),texture->GetDC(), 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
 	}
 }
 
@@ -234,8 +237,6 @@ void CChildView::OnGDICapture()
 		GetWindowRect(&rect);
 
 		h3d::CaptureInfo info;
-		info.oHeight = rect.Height();
-		info.oWidth = rect.Width();
 		info.sNative =reinterpret_cast<unsigned __int64>(window.hWnd);
 
 		if (gdi_capture)
@@ -286,6 +287,7 @@ BOOL CChildView::IterWindow(HWND hwnd)
 	windowName.resize(::GetWindowTextLengthW(hwnd));
 	::GetWindowTextW(hwnd, &windowName[0], windowName.size() + 1);
 
+
 	DWORD ex_style = ::GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
 	DWORD style = ::GetWindowLongPtrW(hwnd, GWL_STYLE);
 
@@ -301,6 +303,7 @@ BOOL CChildView::IterWindow(HWND hwnd)
 	//滤掉
 	if (style & WS_CHILD)
 		return TRUE;
+	
 
 	//打开进程，打不开也滤掉
 	DWORD processId;
@@ -309,14 +312,17 @@ BOOL CChildView::IterWindow(HWND hwnd)
 	if (processId == GetCurrentProcessId())
 		return TRUE;
 
-	HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
-	if (!hProcess)
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId);
+	if (!hProcess) {
+		logstream << "CChildView::IterWindow OpenProcess Failed " << " Error Code = " << GetLastError();
+		logstream<<" PID = "	<<processId << std::endl;
 		return TRUE;
+	}
 
 	DWORD dwSize = MAX_PATH;
 	wchar_t fileName[MAX_PATH];
-	QueryFullProcessImageNameW(hProcess, 0, fileName, &dwSize);
-
+	GetProcessImageFileNameW(hProcess, fileName,dwSize);
+	CloseHandle(hProcess);
 
 	std::wstringstream wss;
 	wss << windowName << "(" << GetFileNameNoExtenion(fileName) << ")";

@@ -141,6 +141,9 @@ GDICapture::~GDICapture() {
 GDITexture* GDICapture::Capture() {
 	HWND hwnd = (HWND)capture_info.sNative;
 
+	if (IsWindow(hwnd) && IsIconic(hwnd))
+		return capture_tex;
+
 	RECT rect = { 0 , 0 , 0, 0 };
 	GetWindowRect(hwnd, &rect);
 	SDst cx = rect.right - rect.left;

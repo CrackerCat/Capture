@@ -1,5 +1,4 @@
-#include "CaptureHook.h"
-#include "Extern.h"
+#include "CaptureHookCommon.h"
 #include <ddraw.h>
 
 using h3d::APIHook;
@@ -370,6 +369,7 @@ void CleanUpDDraw()
 	logstream << "---------------------- Cleared DirectDraw Capture ----------------------" << std::endl;
 }
 
+#pragma warning(disable:4018)
 void handleBufferConversion(LPDWORD dst, LPBYTE src, LONG pitch)
 {
 	//logstream << "trying to download buffer" << std::endl;
@@ -477,7 +477,6 @@ inline HRESULT STDMETHODCALLTYPE UnlockSurface(LPDIRECTDRAWSURFACE7 surface, LPR
 	}
 }
 
-#include "DXGI_D3D10_D3D11.h"
 void CaptureDDraw()
 {
 	//RUNEVERYRESET logstream << "called CaptureDDraw()" << std::endl;

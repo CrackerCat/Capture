@@ -1,4 +1,4 @@
-#include "d3d9_support.h"
+#include "d3d9_magic.h"
 #include "CaptureHook.h"
 #include "Extern.h"
 #include <d3d9.h>

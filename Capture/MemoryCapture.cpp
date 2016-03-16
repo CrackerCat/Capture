@@ -2,23 +2,18 @@
 #include <sstream>
 
 extern "C" {
+	//ffmmpeg不能支持所有的格式，可能需要考虑写一个转换
+	//todo memory capture support R10G10B10A2
 #include <libswscale/swscale.h>
 }
 
 AVPixelFormat GetAVPixelFormat(h3d::SWAPFORMAT format) {
 	switch (format)
 	{
-	case h3d::RGB8:
-		return AV_PIX_FMT_RGB24;
-	case h3d::RGBA8:
-		return AV_PIX_FMT_RGBA;
-	case h3d::BGR8:
-		return AV_PIX_FMT_BGR24;
 	case h3d::BGRA8:
+	case h3d::BGRX8:
 		return AV_PIX_FMT_BGRA;
-	case h3d::RGBA16:
-		return AV_PIX_FMT_RGBA64;
-	case h3d::B5G6R5:
+	case h3d::B5G6R5:case h3d::B5G6R5A1:case h3d::B5G6R5X1:
 		return AV_PIX_FMT_RGB565;
 	case h3d::HDYC:
 		return AV_PIX_FMT_UYVY422;

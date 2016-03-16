@@ -1,6 +1,6 @@
 #include "d3d8.h" 
 
-#include "CaptureHook.h"
+#include "CaptureHookCommon.h"
 #include "DXGI_D3D10_D3D11.h"
 
 #include <Windows.h>
@@ -116,11 +116,13 @@ void D3D8CaptureSetup(IDirect3DDevice8* device) {
 }
 
 h3d::SWAPFORMAT D3D8ConvertFormat(D3DFORMAT format) {
+	//https://msdn.microsoft.com/en-us/library/windows/desktop/bb172558(v=vs.85).aspx#BackBuffer_or_Display_Formats
 	switch (format) {
 	case D3DFMT_A8R8G8B8: return h3d::BGRA8;
-	case D3DFMT_X8R8G8B8: return h3d::BGRA8;
+	case D3DFMT_X8R8G8B8: return h3d::BGRX8;//如果是使用FFMPEG，不需要这个格式
+	case D3DFMT_A1R5G5B5: return h3d::B5G6R5A1;
+	case D3DFMT_X1R5G5B5:return h3d::B5G6R5X1;
 	case D3DFMT_R5G6B5: return h3d::B5G6R5;
-	case D3DFMT_R8G8B8: return h3d::RGB8;
 	}
 	return h3d::SWAPFORMAT_UNKNOWN;
 }

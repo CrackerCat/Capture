@@ -1,5 +1,5 @@
 #include "DXGI_D3D10_D3D11.h"
-#include "CaptureHook.h"
+#include "CaptureHookCommon.h"
 
 //这些代码和D3D11的十分相像，但是并没有什么好办法,可以使用宏的方式
 //不过会变得难以阅读 EventProcess,KeepAliveProcess就已经让人迷糊了

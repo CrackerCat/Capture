@@ -1,5 +1,5 @@
 #include "DXGI_D3D10_D3D11.h"
-#include "CaptureHook.h"
+#include "CaptureHookCommon.h"
 
 
 namespace {

@@ -5,18 +5,19 @@
 
 namespace h3d {
 
+	//格式方式为DXGI书写格式[内存序]
 	enum SWAPFORMAT {
 		SWAPFORMAT_UNKNOWN,
-		RGB8,
-		RGBA8,
-		BGR8,
+		//D3D9 Support Format
+		R10G10B10A2,
 		BGRA8,
 		BGRX8,
-		RGBA16,
-		RGBA32,
+		B5G6R5A1,
+		B5G6R5X1,
 		B5G6R5,
-		R10G10B10A2,
-		HDYC,
+
+		//Camera Support Format
+		HDYC,//UYUV
 	};
 
 

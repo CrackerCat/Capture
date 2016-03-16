@@ -8,6 +8,8 @@
 #pragma once
 
 
+#include <fstream>
+extern std::ofstream logstream;
 // CChildView Ò•´°
 
 class CChildView : public CWnd

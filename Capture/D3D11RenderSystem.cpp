@@ -150,6 +150,7 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, un
 	HANDLE hShare = reinterpret_cast<HANDLE>(Handle);
 
 	ID3D11Resource* share_res = NULL;
+
 	if (SUCCEEDED(device->OpenSharedResource(hShare, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&share_res)))) {
 		ID3D11Texture2D* share_tex = NULL;
 		if (SUCCEEDED(share_res->QueryInterface(&share_tex))) {
@@ -162,12 +163,14 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, un
 
 DXGI_FORMAT ConvertFormat(h3d::SWAPFORMAT format) {
 	switch (format) {
-	case h3d::RGBA8:
-		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case h3d::R10G10B10A2:
+		return DXGI_FORMAT_R10G10B10A2_UNORM;
 	case h3d::BGRA8:
-		return DXGI_FORMAT_B8G8R8A8_UNORM;
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case h3d::BGRX8:
 		return DXGI_FORMAT_B8G8R8X8_UNORM;
+	case h3d::B5G6R5A1: case h3d::B5G6R5X1:
+		return DXGI_FORMAT_B5G5R5A1_UNORM;
 	case h3d::B5G6R5:
 		return DXGI_FORMAT_B5G6R5_UNORM;
 	}
