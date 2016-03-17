@@ -16,6 +16,9 @@
     <Filter Include="RenderSystem">
       <UniqueIdentifier>{db4a27e3-6fb7-4234-9f87-6b3f424e663f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RenderSystem\Shader">
+      <UniqueIdentifier>{95aa480c-da97-4604-9e2c-def27098f6b6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CaptureTexture.h">
@@ -49,6 +52,9 @@
     <ClInclude Include="CameraCapture.h">
       <Filter>Capture</Filter>
     </ClInclude>
+    <ClInclude Include="hash.hpp">
+      <Filter>RenderSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDICapture.cpp">
@@ -75,5 +81,13 @@
     <ClCompile Include="CameraCapture.cpp">
       <Filter>Capture</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="ResloveVS.hlsl">
+      <Filter>RenderSystem\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="ReslovePS.hlsl">
+      <Filter>RenderSystem\Shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 #include "D3D11RenderSystem.hpp"
 #include "WinPlatform.h"
 #include <stdexcept>
+#include <fstream>
 
 #ifndef _USING_V110_SDK71_
 #include <dxgi1_2.h>
@@ -12,6 +13,19 @@ typedef HRESULT(WINAPI*D3D11PROC)(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT,
 
 ID3D10Device1* pDevice = NULL;
 
+
+#include <vector>
+std::vector<char> ReadShaderFile(const wchar_t* path) {
+	std::ifstream fin;
+	fin.open(path, std::ios_base::binary);
+	fin.seekg(0, std::ios_base::end);
+	size_t size = fin.tellg();
+	fin.seekg(0, std::ios_base::beg);
+	std::vector<char> buffer(size);
+	fin.read(&buffer[0], size);
+	fin.close();
+	return buffer;
+}
 
 //vs2008 xp hook
 //不能链接到D3D11.lib，dxgi.lib 只能采取动态载入其dll
@@ -96,6 +110,42 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 		))
 		return false;
 
+	ID3D11Texture2D* back_buffer = NULL;
+	swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&back_buffer));
+
+	factory->device->CreateRenderTargetView(back_buffer, NULL, &rt);
+
+	{
+		std::vector<char> buffer = ReadShaderFile(L"Shader/ResloveVS.cso");
+		D3D11_INPUT_ELEMENT_DESC layout_desc[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		factory->device->CreateVertexShader(&buffer[0], buffer.size(), NULL, &reslove_vs);
+		factory->device->CreateInputLayout(layout_desc, 1, &buffer[0], buffer.size(), &reslove_il);
+
+		buffer.swap(ReadShaderFile(L"Shader/ReslovePS.cso"));
+		factory->device->CreatePixelShader(&buffer[0], buffer.size(), NULL, &reslove_ps);
+	}
+
+	float vertices[4 * 4] = {
+		1,1,1,1,
+		1,-1,1,1,
+		-1,1,1,1,
+		-1,-1,1,1
+	};
+	vb_stride = 16;
+	vb_offset = 0;
+
+	CD3D11_BUFFER_DESC vbDesc(sizeof(vertices), D3D11_BIND_VERTEX_BUFFER, D3D11_USAGE_IMMUTABLE);
+	D3D11_SUBRESOURCE_DATA resDesc;
+	resDesc.pSysMem = vertices;
+	factory->device->CreateBuffer(&vbDesc, &resDesc, &reslove_vb);
+
+	CD3D11_SAMPLER_DESC point_sampler(D3D11_DEFAULT);
+	point_sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	factory->device->CreateSamplerState(&point_sampler, &reslove_ps_ss);
+
+	back_buffer->Release();
 	pAdapter->Release();
 	pFactory->Release();
 
@@ -108,12 +158,13 @@ void h3d::D3D11Engine::Destroy()
 {
 	SR(context);
 	SR(swap_chain);
+	SR(rt);
 	SR(factory->device);
 	delete factory;
 }
 
 h3d::D3D11Engine::D3D11Engine()
-	:factory(NULL),context(NULL),swap_chain(NULL)
+	:factory(NULL),context(NULL),swap_chain(NULL),rt(NULL)
 {
 }
 
@@ -125,6 +176,33 @@ h3d::D3D11Factory & h3d::D3D11Engine::GetFactory()
 void h3d::D3D11Engine::CopyTexture(D3D11Texture * dst, D3D11Texture * src)
 {
 	context->CopyResource(dst->texture, src->texture);
+}
+
+void h3d::D3D11Engine::ResloveTexture(D3D11Texture * dst, D3D11Texture * src) {
+	context->IASetVertexBuffers(0, 1, &reslove_vb, &vb_stride, &vb_offset);
+	context->IASetInputLayout(reslove_il);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	context->VSSetShader(reslove_vs, NULL, 0);
+	context->PSSetShader(reslove_ps, NULL, 0);
+	context->PSSetSamplers(0, 1, &reslove_ps_ss);
+
+	ID3D11RenderTargetView* dst_rtv = dst->RetriveD3DRenderTargetView();
+	ID3D11ShaderResourceView* src_srv = src->RetriveD3DShaderResouceView();
+
+	context->PSSetShaderResources(0, 1, &src_srv);
+	context->OMSetRenderTargets(1, &dst_rtv, NULL);
+
+	D3D11_VIEWPORT vp;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	vp.Height =static_cast<FLOAT>(dst->info.Height);
+	vp.Width = static_cast<FLOAT>(dst->info.Width);
+	vp.MinDepth = 0;
+	vp.MaxDepth = 1;
+	context->RSSetViewports(1, &vp);
+
+	context->Draw(4, 0);
 }
 
 h3d::D3D11Texture::MappedData h3d::D3D11Engine::Map(D3D11Texture * tex)
@@ -178,15 +256,52 @@ DXGI_FORMAT ConvertFormat(h3d::SWAPFORMAT format) {
 }
 
 #pragma warning(disable:4244)
-h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, SWAPFORMAT Format)
+h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, SWAPFORMAT Format,unsigned int access)
 {
-	CD3D11_TEXTURE2D_DESC texDesc(ConvertFormat(Format),Width, Height, 1, 1, 0, D3D11_USAGE_STAGING, D3D11_CPU_ACCESS_READ);
+	CD3D11_TEXTURE2D_DESC texDesc(ConvertFormat(Format),Width, Height, 1, 1, 0);
+
+	if (access == (EA_CPU_WRITE | EA_GPU_READ))
+		texDesc.Usage = D3D11_USAGE_DYNAMIC;
+	else {
+		if (access == EA_CPU_WRITE)
+			texDesc.Usage = D3D11_USAGE_DYNAMIC;
+		else{
+			if (!(access & EA_CPU_READ) && !(access & EA_CPU_WRITE))
+				texDesc.Usage = D3D11_USAGE_DEFAULT;
+			else
+				texDesc.Usage = D3D11_USAGE_STAGING;
+		}
+	}
+
+	if (access& EA_GPU_READ || (D3D11_USAGE_DYNAMIC) == texDesc.Usage)
+		texDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+	if (access & EA_GPU_WRITE)
+		texDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+
+	if (access & EA_CPU_READ)
+		texDesc.CPUAccessFlags |= D3D11_CPU_ACCESS_READ;
+	if (access & EA_CPU_WRITE)
+		texDesc.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
 
 	ID3D11Texture2D* texture = NULL;
 	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture)))
 		return new D3D11Texture(texture);
 
-	return nullptr;
+	return NULL;
+}
+
+ID3D11ShaderResourceView * h3d::D3D11Factory::CreateSRV(ID3D11Texture2D * texture, const D3D11_SHADER_RESOURCE_VIEW_DESC & desc)
+{
+	ID3D11ShaderResourceView* srv = NULL;
+	device->CreateShaderResourceView(texture, &desc, &srv);
+	return srv;
+}
+
+ID3D11RenderTargetView * h3d::D3D11Factory::CreateRTV(ID3D11Texture2D * texture, const D3D11_RENDER_TARGET_VIEW_DESC * desc)
+{
+	ID3D11RenderTargetView* rtv = NULL;
+	device->CreateRenderTargetView(texture, desc, &rtv);
+	return rtv;
 }
 
 H3D_API h3d::D3D11Engine & h3d::GetEngine()

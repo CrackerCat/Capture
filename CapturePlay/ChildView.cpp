@@ -16,7 +16,7 @@ std::ofstream logstream;
 // CChildView
 
 CChildView::CChildView()
-:game_capture(NULL),camera_capture(NULL), hKeepAlive(NULL)
+:game_capture(NULL),camera_capture(NULL), hKeepAlive(NULL),gdi_capture(NULL)
 {
 	logstream.open("CapturePlay.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 }

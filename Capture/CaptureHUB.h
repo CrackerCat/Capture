@@ -9,12 +9,18 @@ namespace h3d {
 	enum SWAPFORMAT {
 		SWAPFORMAT_UNKNOWN,
 		//D3D9 Support Format
-		R10G10B10A2,
+		R10G10B10A2,//it not supported
+		B10G10R10A2,
 		BGRA8,
 		BGRX8,
 		B5G6R5A1,
 		B5G6R5X1,
 		B5G6R5,
+
+		//D3D11 New Format
+		RGBA8,
+		RGBA16,
+		R10G10B10XRA2,
 
 		//Camera Support Format
 		HDYC,//UYUV

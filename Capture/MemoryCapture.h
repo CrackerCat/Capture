@@ -13,6 +13,11 @@ namespace h3d {
 		UINT src_format;
 
 		void* sws_context;//use ffmepg convert format
+
+		bool ffmpeg_support;
+		unsigned int R_MASK;
+		unsigned int G_MASK;
+		unsigned int B_MASK;
 	public:
 		MemoryTexture(UINT format, SDst width, SDst height);
 		~MemoryTexture();

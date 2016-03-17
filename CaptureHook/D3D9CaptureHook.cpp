@@ -185,10 +185,11 @@ void D3D9CaptureSetup(IDirect3DDevice9* device) {
 h3d::SWAPFORMAT ConvertFormat(D3DFORMAT format) {
 	//https://msdn.microsoft.com/en-us/library/windows/desktop/bb172558(v=vs.85).aspx#BackBuffer_or_Display_Formats
 	switch (format) {
-	case D3DFMT_A2R10G10B10: return h3d::R10G10B10A2;
-	case D3DFMT_A8R8G8B8: return h3d::BGRA8;
+	case D3DFMT_A2B10G10R10: return h3d::R10G10B10A2;//A2R10G10B10??
+	case D3DFMT_A2R10G10B10: return h3d::B10G10R10A2;
+	case D3DFMT_A8R8G8B8: return h3d::BGRA8;//not display format
 	case D3DFMT_X8R8G8B8: return h3d::BGRX8;//如果是使用FFMPEG，不需要这个格式
-	case D3DFMT_A1R5G5B5: return h3d::B5G6R5A1;
+	case D3DFMT_A1R5G5B5: return h3d::B5G6R5A1;//not display format
 	case D3DFMT_X1R5G5B5:return h3d::B5G6R5X1;
 	case D3DFMT_R5G6B5: return h3d::B5G6R5;
 	}

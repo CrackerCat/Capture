@@ -35,7 +35,10 @@ namespace h3d {
 	}
 }
 
+#pragma warning(push)
+#pragma warning(disable:4091)
 #include <ImageHlp.h>
+#pragma warning(pop)
 #pragma comment(lib,"dbghelp.lib")
 
 #include <string>
@@ -131,7 +134,6 @@ namespace h3d {
 		//得到程序所在文件夹
 		wchar_t exeFullPath[256]; // MAX_PATH
 		GetModuleFileNameW(NULL, exeFullPath, 256);//得到程序模块名称，全路径 
-		DWORD nLoc;
 		std::wstring strPath(GetFileNameNoExtenion(exeFullPath));
 		
 		wchar_t szFileName[1024];

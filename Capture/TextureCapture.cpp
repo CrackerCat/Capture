@@ -18,7 +18,11 @@ h3d::TextureCapture::TextureCapture(CaptureInfo & info, CaptureCallBack callback
 
 	unsigned __int64 far_handle = *reinterpret_cast<unsigned __int64*>(mMemory);
 	shared_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight, far_handle);
-	capture_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight,(SWAPFORMAT)info.Reserved1);
+
+	if(info.Reserved1 != BGRA8)
+		middle_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight, BGRA8, EA_GPU_WRITE);
+
+	capture_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight,BGRA8 ,EA_CPU_READ);
 }
 
 h3d::TextureCapture::~TextureCapture()
@@ -31,6 +35,10 @@ h3d::TextureCapture::~TextureCapture()
 		delete shared_tex;
 	shared_tex = NULL;
 
+	if (middle_tex)
+		delete middle_tex;
+	middle_tex = NULL;
+
 	if (mMemory)
 		UnmapViewOfFile(mMemory);
 
@@ -40,7 +48,12 @@ h3d::TextureCapture::~TextureCapture()
 
 h3d::D3D11Texture * h3d::TextureCapture::Capture()
 {
-	capture_tex->Assign(shared_tex);
+	if (middle_tex)
+		GetEngine().ResloveTexture(middle_tex, shared_tex);
+	if (middle_tex)
+		capture_tex->Assign(middle_tex);
+	else
+		capture_tex->Assign(shared_tex);
 	return capture_tex;
 }
 

@@ -31,7 +31,11 @@ bool GPUCaptureCheck(IDirect3DDevice9 * device)
 	return false;
 #endif
 
+	if (d3d11_format == DXGI_FORMAT_UNKNOWN)
+		return false;
+
 	bool result = false;
+
 
 	IDirect3D9* d3d = NULL;
 	if (SUCCEEDED(device->GetDirect3D(&d3d))) {

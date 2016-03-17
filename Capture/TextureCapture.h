@@ -15,6 +15,7 @@ namespace h3d {
 		D3D11Texture* capture_tex;
 		D3D11Texture* shared_tex;
 
+		D3D11Texture* middle_tex;//may be null
 
 		HANDLE hMemoryMap;
 		LPVOID mMemory;

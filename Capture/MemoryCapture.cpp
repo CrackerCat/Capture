@@ -105,16 +105,27 @@ void h3d::MemoryCapture::Stop()
 h3d::MemoryTexture::MemoryTexture(UINT format, SDst width, SDst height)
 	:src_format(format),cx(width),cy(height)
 {
-	sws_context = sws_getContext(cx, cy, GetAVPixelFormat((SWAPFORMAT)format), cx, cy, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
-	if (!sws_context)
-		throw std::runtime_error("format unsupport");
+	ffmpeg_support = src_format != R10G10B10A2 && src_format != B10G10R10A2;
+	if(ffmpeg_support)
+		sws_context = sws_getContext(cx, cy, GetAVPixelFormat((SWAPFORMAT)format), cx, cy, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+	if (src_format == R10G10B10A2) {
+		B_MASK = 0X00000FFC; //B
+		G_MASK = 0X003FF000;//G
+		R_MASK = 0XFFC00000;//R
+	}
+	if (src_format == B10G10R10A2) {
+		R_MASK = 0X00000FFC; //R
+		G_MASK = 0X003FF000;//G
+		B_MASK = 0XFFC00000;//B
+	}
 
 	native = new byte[width*height * 4];
 }
 
 h3d::MemoryTexture::~MemoryTexture()
 {
-	sws_freeContext((SwsContext*)sws_context);
+	if(sws_context)
+		sws_freeContext((SwsContext*)sws_context);
 	delete[] native;
 }
 
@@ -134,7 +145,22 @@ void h3d::MemoryTexture::ReSize(SDst width, SDst height)
 void h3d::MemoryTexture::WriteData(LPBYTE pData, int pitch)
 {
 	int linear = cx * 4;
-	sws_scale((SwsContext*)sws_context, &pData, &pitch, 0, cy, &native, &linear);
+	if (ffmpeg_support)
+		sws_scale((SwsContext*)sws_context, &pData, &pitch, 0, cy, &native, &linear);
+	else
+	{
+		for (int y = 0; y != cy; ++y) {
+			byte* dst_begin = native + y*linear;
+			int* src_begin =reinterpret_cast<int*>(pData + y*pitch);
+			for (int x = 0; x != cx; ++x) {
+				int src_pixel = *(src_begin + x);
+				dst_begin[x * 4] = src_pixel & B_MASK;  //B
+				dst_begin[x * 4 + 1] = src_pixel & G_MASK;//G
+				dst_begin[x * 4 + 2] = src_pixel & R_MASK;//R
+				//ignore a
+			}
+		}
+	}
 }
 
 #ifndef _USING_V110_SDK71_
