@@ -16,7 +16,7 @@ namespace h3d {
 		HBITMAP target_bitmap;
 		BITMAPINFOHEADER BitMapInfoHeader;
 
-		void* sws_context;//convert RGBA to BGRA
+		//i thick if os >= 7 create D3D texture
 	public:
 		GDITexture(HWND hwnd, SDst width, SDst height);
 		~GDITexture();

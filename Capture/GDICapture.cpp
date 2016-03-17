@@ -155,8 +155,9 @@ GDITexture* GDICapture::Capture() {
 			capture_tex->ReSize(cx, cy);
 	}
 	if (!StretchBlt(capture_tex->GetDC(), 0, capture_tex->GetHeight(), capture_tex->GetWidth(), -(int)capture_tex->GetHeight(), src_hdc, 0, 0, cx, cy, SRCCOPY)) {
+		ReleaseDC(hwnd,src_hdc);
 		return NULL;
 	}
-
+	ReleaseDC(hwnd, src_hdc);
 	return capture_tex;
 }

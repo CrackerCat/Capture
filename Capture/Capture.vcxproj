@@ -134,6 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../ffmpeg</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -142,6 +143,9 @@
       <AdditionalDependencies>Mfreadwrite.lib;Mf.lib;Mfplat.lib;mfuuid.lib;libswscale/swscale.lib;libavutil/avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'">
     <ClCompile>
