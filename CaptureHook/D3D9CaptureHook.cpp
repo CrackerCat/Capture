@@ -315,7 +315,7 @@ HRESULT __stdcall ResetEx(IDirect3DDevice9Ex *device, D3DPRESENT_PARAMETERS* par
 
 void CreateCPUCapture(IDirect3DDevice9* device);
 
-#define NUM_BACKBUFF 3
+#include "D3D8_D3D9_OPENGL_CPU.inl"
 
 namespace {
 	//CPU copy stuff
@@ -326,15 +326,6 @@ namespace {
 	IDirect3DSurface9* d3d9_copytextures[NUM_BACKBUFF] = { 0,0,0 };
 	UINT tex_pitch = 0;
 
-	CRITICAL_SECTION data_mutexs[NUM_BACKBUFF];
-
-	void* copy_data = NULL;
-	UINT copy_index = 0;
-	HANDLE copy_event = NULL;
-	HANDLE copy_thread = NULL;
-	bool copy_thread_run = true;
-	h3d::MemoryInfo* copy_info = NULL;
-	h3d::byte* tex_addrsss[2] = { NULL,NULL };
 	static DWORD copy_wait = 0;
 
 	DWORD curr_capture = 0;
@@ -452,7 +443,6 @@ void D3D9Capture(IDirect3DDevice9* device) {
 		Flush();
 }
 
-DWORD CopyD3D9TextureThread(LPVOID lpUseless);
 
 void CreateCPUCapture(IDirect3DDevice9* device) {
 	bool cond = true;
@@ -500,7 +490,7 @@ void CreateCPUCapture(IDirect3DDevice9* device) {
 
 	if (cond) {
 		copy_thread_run = true;
-		if (copy_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CopyD3D9TextureThread, NULL, 0, NULL)) {
+		if (copy_thread = CreateThread(NULL, 0, CopyTextureThread, &d3d9_captureinfo, 0, NULL)) {
 			if (!(copy_event = CreateEvent(NULL, FALSE, FALSE, NULL))) {
 				logstream << "Create CopyEvent Failed" << std::endl;
 			}
@@ -534,53 +524,13 @@ void CreateCPUCapture(IDirect3DDevice9* device) {
 
 #define SR(var) if(var) {var->Release();var = NULL;}
 
-DWORD CopyD3D9TextureThread(LPVOID lpUseless) {
-	logstream << "Begin CopyD3D9TextureThread" << std::endl;
 
-	HANDLE hEvent = NULL;
-	if (!DuplicateHandle(GetCurrentProcess(), copy_event, GetCurrentProcess(), &hEvent, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
-		logstream << "CopyD3D9TextureThread DuplicateHandle Failed" << std::endl;
-	}
-
-	bool address_index = false;
-
-	//得到事件传信时开始工作
-	while ((WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0) && copy_thread_run) {
-		bool next_address_index = !address_index;
-
-		DWORD local_copy_index = copy_index;
-		LPVOID local_copy_data = copy_data;
-
-		if (local_copy_index < NUM_BACKBUFF && local_copy_data != NULL) {
-			EnterCriticalSection(&data_mutexs[local_copy_index]);
-
-			int last_rendered = -1;
-
-			if (WaitForSingleObject(texture_mutex[address_index], 0) == WAIT_OBJECT_0)
-				last_rendered = address_index;
-			else if (WaitForSingleObject(texture_mutex[next_address_index], 0) == WAIT_OBJECT_0)
-				last_rendered = next_address_index;
-
-
-			if (last_rendered != -1) {
-				memcpy(tex_addrsss[last_rendered], local_copy_data, tex_pitch*d3d9_captureinfo.oHeight);
-				ReleaseMutex(texture_mutex[last_rendered]);
-				copy_info->Reserved3 = last_rendered;
-			}
-
-			LeaveCriticalSection(&data_mutexs[local_copy_index]);
-		}
-
-		address_index = next_address_index;
-	}
-
-	CloseHandle(hEvent);
-	logstream << "Exit CopyD3D9TextureThread" << std::endl;
-	return 0;
-}
 
 void Flush() {
 	has_textured = false;
+
+	if (copy_info)
+		copy_info->Reserved3 = -1;
 
 	//CPU
 	if (copy_thread) {

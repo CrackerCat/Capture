@@ -211,10 +211,13 @@
   <ItemGroup>
     <ClInclude Include="CaptureHook.h" />
     <ClInclude Include="CaptureHookCommon.h" />
+    <ClInclude Include="D3D8_D3D9_OPENGL_CPU.inl" />
     <ClInclude Include="D3D9CaptureHook.h" />
     <ClInclude Include="d3d9_magic.h" />
+    <ClInclude Include="D3D9_OPENGL_GPU.h" />
     <ClInclude Include="DXGI_D3D10_D3D11.h" />
     <ClInclude Include="Extern.h" />
+    <ClInclude Include="opengl.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -228,11 +231,13 @@
     <ClCompile Include="D3D9CaptureHook.cpp" />
     <ClCompile Include="D3D9CpatureHookGPU.cpp" />
     <ClCompile Include="d3d9_magic.cpp" />
-    <ClCompile Include="DDraw.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="D3D9_OPENGL_GPU.cpp" />
     <ClCompile Include="DLLMain.cpp" />
     <ClCompile Include="DXGICaptureHook.cpp" />
+    <ClCompile Include="OpenGL.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

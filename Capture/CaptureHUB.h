@@ -31,6 +31,8 @@ namespace h3d {
 	//native_handle 目标窗体句柄 [NULL = 桌面抓取]
 	//output_width x output_height 输出分辨率 [-1 = 按源输出]
 	//output_fps 输出帧率[ -1 = 按源输出]
+
+	//这是一个非常重要的结构体！
 	struct H3D_API CaptureInfo
 	{
 		unsigned __int64 sNative;

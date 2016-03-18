@@ -177,7 +177,7 @@ namespace {
 
 bool CreateCPUCapture(IDirect3DDevice8* device);
 
-#define NUM_BACKBUFF 3
+#include "D3D8_D3D9_OPENGL_CPU.inl"
 
 namespace {
 	//CPU copy stuff
@@ -185,16 +185,6 @@ namespace {
 	bool locked_textures[NUM_BACKBUFF] = { 0,0,0 };
 	UINT tex_pitch = 0;
 
-	CRITICAL_SECTION data_mutexs[NUM_BACKBUFF];
-
-	void* copy_data = NULL;
-	UINT copy_index = 0;
-	HANDLE copy_event = NULL;
-	HANDLE copy_thread = NULL;
-	bool copy_thread_run = true;
-	h3d::MemoryInfo* copy_info = NULL;
-	h3d::byte* tex_addrsss[2] = { NULL,NULL };
-	static DWORD copy_wait = 0;
 
 	DWORD curr_capture = 0;
 }
@@ -249,7 +239,6 @@ void D3D8Capture(IDirect3DDevice8* device) {
 		D3D8Flush();
 }
 
-DWORD CopyD3D8TextureThread(LPVOID lpUseless);
 
 bool CreateCPUCapture(IDirect3DDevice8* device) {
 
@@ -274,7 +263,7 @@ bool CreateCPUCapture(IDirect3DDevice8* device) {
 
 
 	copy_thread_run = true;
-	if (copy_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CopyD3D8TextureThread, NULL, 0, NULL)) {
+	if (copy_thread = CreateThread(NULL, 0, CopyTextureThread, &D3D8_captureinfo, 0, NULL)) {
 		if (!(copy_event = CreateEvent(NULL, FALSE, FALSE, NULL))) {
 			logstream << "Create CopyEvent Failed" << std::endl;
 			return false;
@@ -297,51 +286,6 @@ bool CreateCPUCapture(IDirect3DDevice8* device) {
 	SetEvent(hReadyEvent);
 	logstream << "Allthing has ready,HOOK Success[Sent Event to CaptureApp]" << std::endl;
 	return true;
-}
-
-DWORD CopyD3D8TextureThread(LPVOID lpUseless) {
-	logstream << "Begin CopyD3D8TextureThread" << std::endl;
-
-	HANDLE hEvent = NULL;
-	if (!DuplicateHandle(GetCurrentProcess(), copy_event, GetCurrentProcess(), &hEvent, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
-		logstream << "CopyD3D8TextureThread DuplicateHandle Failed" << std::endl;
-	}
-
-	bool address_index = false;
-
-	//得到事件传信时开始工作
-	while ((WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0) && copy_thread_run) {
-		bool next_address_index = !address_index;
-
-		DWORD local_copy_index = copy_index;
-		LPVOID local_copy_data = copy_data;
-
-		if (local_copy_index < NUM_BACKBUFF && local_copy_data != NULL) {
-			EnterCriticalSection(&data_mutexs[local_copy_index]);
-
-			int last_rendered = -1;
-
-			if (WaitForSingleObject(texture_mutex[address_index], 0) == WAIT_OBJECT_0)
-				last_rendered = address_index;
-			else if (WaitForSingleObject(texture_mutex[next_address_index], 0) == WAIT_OBJECT_0)
-				last_rendered = next_address_index;
-
-
-			if (last_rendered != -1) {
-				memcpy(tex_addrsss[last_rendered], local_copy_data, tex_pitch*D3D8_captureinfo.oHeight);
-				ReleaseMutex(texture_mutex[last_rendered]);
-				copy_info->Reserved3 = last_rendered;
-			}
-
-			LeaveCriticalSection(&data_mutexs[local_copy_index]);
-		}
-
-		address_index = next_address_index;
-	}
-
-	CloseHandle(hEvent);
-	logstream << "Exit CopyD3D8TextureThread" << std::endl;
-	return 0;
 }
 
 
@@ -381,7 +325,6 @@ void D3D8Flush() {
 	h3d::DestroySharedMem();
 	copy_data = NULL;
 	copy_info = NULL;
-	copy_wait = 0;
 	copy_index = 0;
 
 

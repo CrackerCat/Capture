@@ -36,6 +36,15 @@
     <ClInclude Include="d3d9_magic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="opengl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D9_OPENGL_GPU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D8_D3D9_OPENGL_CPU.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CaptureHook.rc">
@@ -64,14 +73,17 @@
     <ClCompile Include="D3D8CaptureHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DDraw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="D3D9CpatureHookGPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="d3d9_magic.cpp">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D9_OPENGL_GPU.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

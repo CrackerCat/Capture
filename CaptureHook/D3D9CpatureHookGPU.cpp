@@ -21,7 +21,7 @@ namespace {
 }
 
 
-typedef HRESULT(WINAPI*DXGICREATEPROC)(REFIID riid, void ** ppFactory);
+
 
 #define SR(var) if(var) {var->Release();var = NULL;}
 
@@ -52,73 +52,18 @@ bool GPUCaptureCheck(IDirect3DDevice9 * device)
 	return result;
 }
 
+#include "D3D9_OPENGL_GPU.h"
 void CreateGPUCapture(IDirect3DDevice9* device) {
-	HMODULE hDXGIDll = LoadLibraryW(L"dxgi.dll");
-	if (!hDXGIDll)
-		return;
-
-	DXGICREATEPROC CreateDXGI = (DXGICREATEPROC)GetProcAddress(hDXGIDll, "CreateDXGIFactory1");
-
-	IDXGIFactory1* pFactory = NULL;
-	if (FAILED(CreateDXGI(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pFactory))))
-		return;
-
-	//总是使用第一个显卡
-	IDXGIAdapter1* pAdapter = NULL;
-	if (FAILED(pFactory->EnumAdapters1(0, &pAdapter)))
-		goto d3d11_clear;
-
-	HMODULE hD3D11Dll = LoadLibraryW(L"d3d11.dll");
-	if (!hD3D11Dll)
-		goto d3d11_clear;
-
-	D3D_FEATURE_LEVEL desired_levels[] = { D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0,
-		D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2 ,D3D_FEATURE_LEVEL_9_1 };
-	D3D_FEATURE_LEVEL support_level;
-	D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_UNKNOWN;
-
-	UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#ifdef _DEBUG
-	Flags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
-
-	PFN_D3D11_CREATE_DEVICE d3d11_create = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(hD3D11Dll, "D3D11CreateDevice");
-	if (FAILED(d3d11_create(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, Flags, desired_levels, 6, D3D11_SDK_VERSION, &d3d11_device, &support_level, &d3d11_context)))
-		goto d3d11_clear;
-
-	logstream << "D3D9Capture By D3D11 Create Device Succ" << std::endl;
-d3d11_clear:
-	SR(pAdapter);
-	SR(pFactory);
-
-	if (!d3d11_device)
-		return;
-
-	CD3D11_TEXTURE2D_DESC copyTexDesc(d3d11_format,
-		d3d9_captureinfo.oWidth, d3d9_captureinfo.oHeight,
-		1, 1,
-		D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE);
-	copyTexDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-
-	if (FAILED(d3d11_device->CreateTexture2D(&copyTexDesc, NULL, &d3d11_texture)))
-		return;
-
-	HANDLE sharedHandle = NULL;
-	IDXGIResource* dxgi_res = NULL;
-	if (FAILED(d3d11_texture->QueryInterface(&dxgi_res)))
-		return;
-
-	if (FAILED(dxgi_res->GetSharedHandle(&sharedHandle)))
-		return;
-
-	dxgi_res->Release();
-
+	
+	HANDLE sharedHandle = h3d::CreateSharedTexture(d3d11_texture, d3d11_device, d3d11_context, d3d11_format, d3d9_captureinfo.oWidth, d3d9_captureinfo.oHeight);
+	if (!sharedHandle)
+		goto clear_all;
 	IDirect3DTexture9* d3d9_texture = NULL;
 	{
 		//!!!用D3D9设备从D3D11的共享句柄创建贴图!!!
 		h3d::BeginD3D9Patch(hD3D9Dll);
 
-		if (FAILED(device->CreateTexture(copyTexDesc.Width, copyTexDesc.Height, 1, D3DUSAGE_RENDERTARGET, (D3DFORMAT)d3d9_format, D3DPOOL_DEFAULT, &d3d9_texture, &sharedHandle))) {
+		if (FAILED(device->CreateTexture(d3d9_captureinfo.oWidth, d3d9_captureinfo.oHeight, 1, D3DUSAGE_RENDERTARGET, (D3DFORMAT)d3d9_format, D3DPOOL_DEFAULT, &d3d9_texture, &sharedHandle))) {
 			logstream << "Warning: CreateTexture->OpenShared Failed" << std::endl;
 			return;
 		}
