@@ -56,7 +56,7 @@ h3d::CaptureHUB* h3d::GraphicCapture(unsigned long processId)
 		BOOL bX86 = TRUE;
 		IsWow64Process(hProcess, &bX86);
 
-		std::wstring ApplicationName = L"CaptrueInject";
+		std::wstring ApplicationName = L"CaptureInject";
 		if (bX86)
 			ApplicationName.append(L".x86");
 		else
@@ -70,7 +70,10 @@ h3d::CaptureHUB* h3d::GraphicCapture(unsigned long processId)
 		std::wstring CommandLine = std::to_wstring(processId);
 
 		PROCESS_INFORMATION pi;
-		STARTUPINFO si;
+		ZeroMemory(&pi, sizeof(pi));
+		STARTUPINFO si = { sizeof(STARTUPINFO)};
+
+
 		CreateProcessW(ApplicationName.c_str(), &CommandLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 		CloseHandle(pi.hThread);
 		WaitForSingleObject(pi.hProcess, INFINITE);
