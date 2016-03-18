@@ -167,7 +167,7 @@ DWORD FindProcess(const wchar_t* processName) {
 
 			wchar_t szProcessName[MAX_PATH] = L"<unknown>";
 
-			HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, aProcesses[i]);
+			HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, aProcesses[i]);
 
 			if (NULL != hProcess) {
 				HMODULE hMod;
