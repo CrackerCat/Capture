@@ -1,5 +1,4 @@
 #include "GraphicCapture.h"
-#include "CaptureInject.h"
 #include "MemoryCapture.h"
 #include "TextureCapture.h"
 #include <sstream>
@@ -52,27 +51,37 @@ h3d::CaptureHUB* h3d::GraphicCapture(unsigned long processId)
 		SetEvent(hBeginEvent);
 		CloseHandle(hBeginEvent);
 	}
+	else {
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId);
+		BOOL bX86 = TRUE;
+		IsWow64Process(hProcess, &bX86);
 
-	//32位程序无法向64位进程注入64位的dll，需要编写一个小型exe来完成注入
-	h3d::AdjustToken();
+		std::wstring ApplicationName = L"CaptrueInject";
+		if (bX86)
+			ApplicationName.append(L".x86");
+		else
+			ApplicationName.append(L".x64");
 
-	wchar_t directory[MAX_PATH] = {};
-	GetCurrentDirectoryW(MAX_PATH, directory);
-#ifndef	_WIN64
-#ifndef _DEBUG
-	bool inject_result = h3d::InjectDLL(OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId),std::wstring(directory)+L"/CaptureHook.x86.dll");
-#else
-	bool inject_result = h3d::InjectDLL(OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId), std::wstring(directory) + L"/CaptureHook.x86.debug.dll");
-#endif
-#else
 #ifdef _DEBUG
-	bool inject_result = h3d::InjectDLL(OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId), L"CaptureHook.x64.debug.dll");
-#else
-	bool inject_result = h3d::InjectDLL(OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId), L"CaptureHook.x64.dll");
+		ApplicationName.append(L".debug");
 #endif
-#endif
-	if (!inject_result)
-		return nullptr;
+		ApplicationName.append(L".exe");
+
+		std::wstring CommandLine = std::to_wstring(processId);
+
+		PROCESS_INFORMATION pi;
+		STARTUPINFO si;
+		CreateProcessW(ApplicationName.c_str(), &CommandLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+		CloseHandle(pi.hThread);
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		DWORD inject_result = 0;
+		GetExitCodeProcess(pi.hProcess,&inject_result);
+
+		CloseHandle(pi.hProcess);
+		CloseHandle(hProcess);
+		if (inject_result)
+			return nullptr;
+	}
 
 	std::wstringstream wss;
 	wss << EVNET_CAPTURE_READY << processId;
@@ -84,7 +93,10 @@ h3d::CaptureHUB* h3d::GraphicCapture(unsigned long processId)
 		return nullptr;
 
 	logstream << "WaitForSingleObject hReadyEvent " << std::endl;
-	WaitForSingleObject(hReadyEvent, INFINITE);
+	if (WaitForSingleObject(hReadyEvent, 1000) == WAIT_TIMEOUT) {
+		CloseHandle(hReadyEvent);
+		return nullptr;
+	}
 	CloseHandle(hReadyEvent);
 
 	h3d::CaptureInfo info;

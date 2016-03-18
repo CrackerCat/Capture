@@ -234,9 +234,7 @@
     <ClCompile Include="D3D9_OPENGL_GPU.cpp" />
     <ClCompile Include="DLLMain.cpp" />
     <ClCompile Include="DXGICaptureHook.cpp" />
-    <ClCompile Include="OpenGLCaptureHook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="OpenGLCaptureHook.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -56,7 +56,7 @@ namespace h3d {
 	void EndDXGICaptureHook();
 
 	bool BeginOpenGLCapture();
-	bool EndOpenGLCapture();
+	void EndOpenGLCapture();
 
 
 #ifdef _WIN64

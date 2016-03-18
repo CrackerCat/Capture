@@ -201,7 +201,6 @@
     <ClInclude Include="hash.hpp" />
     <ClInclude Include="TextureCapture.h" />
     <ClInclude Include="GDICapture.h" />
-    <ClInclude Include="CaptureInject.h" />
     <ClInclude Include="GraphicCapture.h" />
     <ClInclude Include="MemoryCapture.h" />
     <ClInclude Include="WinPlatform.h" />
@@ -211,7 +210,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="CaptureInject.cpp" />
     <ClCompile Include="D3D11RenderSystem.cpp" />
     <ClCompile Include="D3D11Texture.cpp" />
     <ClCompile Include="GDICapture.cpp" />

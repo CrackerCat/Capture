@@ -33,9 +33,6 @@
     <ClInclude Include="GDICapture.h">
       <Filter>Capture</Filter>
     </ClInclude>
-    <ClInclude Include="CaptureInject.h">
-      <Filter>Capture</Filter>
-    </ClInclude>
     <ClInclude Include="MemoryCapture.h">
       <Filter>Capture</Filter>
     </ClInclude>
@@ -58,9 +55,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDICapture.cpp">
-      <Filter>Capture</Filter>
-    </ClCompile>
-    <ClCompile Include="CaptureInject.cpp">
       <Filter>Capture</Filter>
     </ClCompile>
     <ClCompile Include="MemoryCapture.cpp">

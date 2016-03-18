@@ -464,7 +464,7 @@ static void RegisterFBO()
 		logstream << "FBO Maybe available" <<std::endl;
 }
 
-bool BeginOpenGLCapture()
+bool h3d::BeginOpenGLCapture()
 {
 	HMODULE hGL = GetModuleHandleW(L"opengl32.dll");
 	if (hGL)
@@ -495,7 +495,7 @@ bool BeginOpenGLCapture()
 	return false;
 }
 
-void EndOpenGLCapture()
+void h3d::EndOpenGLCapture()
 {
 	hdc_swapbuffers.UnDo();
 	wgl_hdc_swaplayerbuffers.UnDo();
