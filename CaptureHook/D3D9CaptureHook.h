@@ -9,7 +9,7 @@ void Flush();
 
 bool GPUCaptureCheck(IDirect3DDevice9 * device);
 
-void CreateGPUCapture(IDirect3DDevice9* device);
+void CreateD3D9GPUCapture(IDirect3DDevice9* device);
 void D3D9CaptureGPU(IDirect3DDevice9* device);
 void FlushGPU();
 

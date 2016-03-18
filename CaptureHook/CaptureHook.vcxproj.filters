@@ -39,10 +39,10 @@
     <ClInclude Include="opengl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3D9_OPENGL_GPU.h">
+    <ClInclude Include="D3D8_D3D9_OPENGL_CPU.inl">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3D8_D3D9_OPENGL_CPU.inl">
+    <ClInclude Include="D3D9_OPENGL_GPU.inl">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -79,10 +79,10 @@
     <ClCompile Include="d3d9_magic.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenGL.cpp">
+    <ClCompile Include="D3D9_OPENGL_GPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D3D9_OPENGL_GPU.cpp">
+    <ClCompile Include="OpenGLCaptureHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

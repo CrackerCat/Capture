@@ -7,21 +7,6 @@ DXGI_FORMAT d3d11_format = DXGI_FORMAT_UNKNOWN;
 #include <d3d11.h>
 #include "d3d9_magic.h"
 
-namespace {
-	//GPU COPY STUFF
-	ID3D11Device* d3d11_device = NULL;
-	ID3D11DeviceContext* d3d11_context = NULL;
-
-	ID3D11Texture2D* d3d11_texture = NULL;
-
-	IDirect3DSurface9* d3d9_surface = NULL;
-
-	unsigned __int64* pTexHandle = NULL;
-
-}
-
-
-
 
 #define SR(var) if(var) {var->Release();var = NULL;}
 
@@ -52,8 +37,13 @@ bool GPUCaptureCheck(IDirect3DDevice9 * device)
 	return result;
 }
 
-#include "D3D9_OPENGL_GPU.h"
-void CreateGPUCapture(IDirect3DDevice9* device) {
+#include "D3D9_OPENGL_GPU.inl"
+
+namespace {
+	IDirect3DSurface9* d3d9_surface = NULL;
+}
+
+void CreateD3D9GPUCapture(IDirect3DDevice9* device) {
 	
 	HANDLE sharedHandle = h3d::CreateSharedTexture(d3d11_texture, d3d11_device, d3d11_context, d3d11_format, d3d9_captureinfo.oWidth, d3d9_captureinfo.oHeight);
 	if (!sharedHandle)
@@ -92,7 +82,7 @@ d3d9_clear:
 	memcpy(ptr_capture_info, &d3d9_captureinfo, sizeof(h3d::CaptureInfo));
 	SetEvent(hReadyEvent);
 
-	logstream << "Allthing has ready, HOOK Success[Sent Event to CaptureApp]" << std::endl;
+	logstream << "Allthing has ready,D3D9 GPU HOOK Success[Sent Event to CaptureApp]" << std::endl;
 	return;
 clear_all:
 	FlushGPU();

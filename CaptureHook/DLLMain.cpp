@@ -18,7 +18,7 @@ bool target_acquired = false;
 bool capture_run = true;
 
 void* ptr_capture_info = NULL;
-HANDLE texture_mutex[2] = { NULL,NULL};
+HANDLE texture_mutex[2] = { NULL,NULL };
 
 HANDLE hReadyEvent = NULL;
 HANDLE hStopEvent = NULL;
@@ -51,7 +51,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved) {
 	if (dwReason == DLL_PROCESS_DETACH) {
 		bCaptureThreadStop = true;
 
-		if(hCaptureThread)
+		if (hCaptureThread)
 			WaitForSingleObject(hCaptureThread, 500);
 
 		if (hSender)
@@ -106,7 +106,7 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 		CloseHandle(hMainThread);
 	}
 
-	
+
 	//log path should be logs/CapthreHook******.log
 
 	wchar_t sProcessName[MAX_PATH] = {};
@@ -129,7 +129,7 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 	hInfoMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(h3d::CaptureInfo), wss.str().c_str());
 
 	if (!hInfoMap) {
-		logstream << "CaptureThread Can't CreateFileMappingW lpName = " <<wss.str()<<" ErrorCode = " <<GetLastError() << std::endl;
+		logstream << "CaptureThread Can't CreateFileMappingW lpName = " << wss.str() << " ErrorCode = " << GetLastError() << std::endl;
 		return 0;
 	}
 
@@ -145,7 +145,7 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 	wss.swap(std::wstringstream());
 	wss << EVNET_CAPTURE_READY << currproces_id;
 	hReadyEvent = GetEvent(wss.str().c_str());
-	logstream << "Create Ready Event :" << wss.str()<<std::endl;
+	logstream << "Create Ready Event :" << wss.str() << std::endl;
 
 	wss.swap(std::wstringstream());
 	wss << EVENT_OBS_STOP << currproces_id;
@@ -166,7 +166,7 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 	//插入一些锁逻辑
 
 	texture_mutex[0] = OpenMutexW(MUTEX_ALL_ACCESS, FALSE, TEXTURE_FIRST_MUTEX);
-	if(texture_mutex[0])//循环捕获
+	if (texture_mutex[0])//循环捕获
 	{
 		texture_mutex[1] = OpenMutex(MUTEX_ALL_ACCESS, FALSE, TEXTURE_SECOND_MUTEX);
 		if (texture_mutex[1]) {
@@ -181,9 +181,9 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 			CloseHandle(texture_mutex[1]);
 			texture_mutex[1] = NULL;
 		}
-		else 
+		else
 			logstream << "CaptureThread Can't Open Second TextureMutex" << std::endl;
-		
+
 	}
 	else
 		logstream << "CaptureThread Can't Open First TextureMutex" << std::endl;
@@ -197,6 +197,7 @@ bool bD3D8Capture = false;
 bool bD3D9Capture = false;
 
 bool bDXGICapture = false;
+bool bGLCapture = false;
 bool CpatureHook() {
 	if (!hSender)
 		return false;
@@ -211,6 +212,14 @@ bool CpatureHook() {
 	if (!bDXGICapture) {
 		if (h3d::BeginDXGICaptureHook()) {
 			bDXGICapture = true;
+			return true;
+		}
+	}
+
+
+	if (!bGLCapture) {
+		if (h3d::BeginOpenGLCapture()) {
+			bGLCapture = true;
 			return true;
 		}
 	}

@@ -19,8 +19,8 @@ namespace h3d {
 		}
 	}
 
-#define KeepAliveProcess(clear_statement) if (capture_run) { \
-	static LONGLONG prev_point = h3d::GetOSMillSeconds(); \
+#define KeepAliveProcess(clear_statement) static LONGLONG prev_point = h3d::GetOSMillSeconds(); \
+	if (capture_run) { \
 		LONGLONG capture_tp = h3d::GetOSMillSeconds(); \
 		if(capture_tp - prev_point > KEEP_TIME_DURATION) {\
 				HANDLE keepAlive = OpenEventW(EVENT_ALL_ACCESS, FALSE, sKeepAlive.c_str()); \

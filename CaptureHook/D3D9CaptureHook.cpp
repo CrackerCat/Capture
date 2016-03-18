@@ -355,7 +355,7 @@ void D3D9Capture(IDirect3DDevice9* device) {
 
 
 		if (gpu_support)
-			CreateGPUCapture(device);
+			CreateD3D9GPUCapture(device);
 		else
 			CreateCPUCapture(device);
 	}

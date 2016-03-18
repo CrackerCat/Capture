@@ -70,5 +70,31 @@ static DWORD WINAPI CopyTextureThread(LPVOID lpUseless) {
 	return 0;
 }
 
+static bool CopySignal(h3d::CaptureInfo& info, UINT ptich) {
+	copy_thread_run = true;
+	if (copy_thread = CreateThread(NULL, 0, CopyTextureThread, &info, 0, NULL)) {
+		if (!(copy_event = CreateEvent(NULL, FALSE, FALSE, NULL))) {
+			logstream << "Create CopyEvent Failed" << std::endl;
+			return false;
+		}
+	}
+	else
+		return false;
+
+
+	info.Reserved2 = h3d::CtorSharedMemCPUCapture(ptich*info.oHeight, info.Reserved3, copy_info, tex_addrsss);
+
+	if (!info.Reserved2) {
+		logstream << "Create Shared Memory Failed" << std::endl;
+		return false;
+	}
+
+	has_textured = true;
+	info.Reserved4 = ptich;
+	memcpy(ptr_capture_info, &info, sizeof(h3d::CaptureInfo));
+	SetEvent(hReadyEvent);
+	return true;
+}
+
 
 #endif

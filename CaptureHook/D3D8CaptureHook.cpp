@@ -1,13 +1,10 @@
 #include "d3d8.h" 
 
 #include "CaptureHookCommon.h"
-#include "DXGI_D3D10_D3D11.h"
 
 #include <Windows.h>
 #include <Shlobj.h>
 
-
-//TODO Support D3D8EX
 
 #pragma warning(disable:4244)
 
@@ -183,8 +180,6 @@ namespace {
 	//CPU copy stuff
 	IDirect3DSurface8 * D3D8_textures[NUM_BACKBUFF] = { 0,0,0 };
 	bool locked_textures[NUM_BACKBUFF] = { 0,0,0 };
-	UINT tex_pitch = 0;
-
 
 	DWORD curr_capture = 0;
 }
@@ -257,34 +252,13 @@ bool CreateCPUCapture(IDirect3DDevice8* device) {
 	if (FAILED(D3D8_textures[NUM_BACKBUFF - 1]->LockRect(&lr, NULL, D3DLOCK_READONLY))) {
 		logstream << "CPU Texture Lock Failed,can't get pitch" << std::endl;
 	}
-	tex_pitch = lr.Pitch;
 	D3D8_textures[NUM_BACKBUFF - 1]->UnlockRect();
 
 
 
-	copy_thread_run = true;
-	if (copy_thread = CreateThread(NULL, 0, CopyTextureThread, &D3D8_captureinfo, 0, NULL)) {
-		if (!(copy_event = CreateEvent(NULL, FALSE, FALSE, NULL))) {
-			logstream << "Create CopyEvent Failed" << std::endl;
-			return false;
-		}
-	}
-	else
+	if (!CopySignal(D3D8_captureinfo, lr.Pitch))
 		return false;
-
-
-	D3D8_captureinfo.Reserved2 = h3d::CtorSharedMemCPUCapture(tex_pitch*D3D8_captureinfo.oHeight, D3D8_captureinfo.Reserved3, copy_info, tex_addrsss);
-
-	if (!D3D8_captureinfo.Reserved2) {
-		logstream << "Create Shared Memory Failed" << std::endl;
-		return false;
-	}
-
-	has_textured = true;
-	D3D8_captureinfo.Reserved4 = tex_pitch;
-	memcpy(ptr_capture_info, &D3D8_captureinfo, sizeof(h3d::CaptureInfo));
-	SetEvent(hReadyEvent);
-	logstream << "Allthing has ready,HOOK Success[Sent Event to CaptureApp]" << std::endl;
+	logstream << "Allthing has ready,D3D8 CPU HOOK Success[Sent Event to CaptureApp]" << std::endl;
 	return true;
 }
 

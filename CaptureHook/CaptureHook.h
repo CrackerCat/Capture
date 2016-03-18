@@ -55,6 +55,10 @@ namespace h3d {
 	bool BeginDXGICaptureHook();
 	void EndDXGICaptureHook();
 
+	bool BeginOpenGLCapture();
+	bool EndOpenGLCapture();
+
+
 #ifdef _WIN64
 	typedef unsigned __int64 PTR;
 #else
