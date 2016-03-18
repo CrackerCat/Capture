@@ -366,7 +366,7 @@ void OpenGLHDCCapture(HDC hDC)
 				ClearGLData();
 	}
 	else {
-		logstream << "DC change new = " << (UINT)hDC << " old = " << (UINT)hdc_acquried << std::endl;
+		logstream << "DC change new = " << (INT_PTR)hDC << " old = " << (INT_PTR)hdc_acquried << std::endl;
 		ClearGLData();
 	}
 }
@@ -484,10 +484,10 @@ bool h3d::BeginOpenGLCapture()
 
 		if (jimglSwapLayerBuffers && jimglSwapBuffers && jimglDeleteContext)
 		{
-			hdc_swapbuffers.Do((FARPROC)SwapBuffers, (FARPROC)SwapBuffersHook);
-			wgl_hdc_swaplayerbuffers.Do((FARPROC)jimglSwapLayerBuffers, (FARPROC)wglSwapLayerBuffersHook);
-			wgl_hdc_swapbuffers.Do((FARPROC)jimglSwapBuffers, (FARPROC)wglSwapBuffersHook);
-			wgl_delcontext.Do((FARPROC)jimglDeleteContext, (FARPROC)wglDeleteContextHook);
+			hdc_swapbuffers.Do((h3d::WINAPIPROC)SwapBuffers, (h3d::WINAPIPROC)SwapBuffersHook);
+			wgl_hdc_swaplayerbuffers.Do((h3d::WINAPIPROC)jimglSwapLayerBuffers, (h3d::WINAPIPROC)wglSwapLayerBuffersHook);
+			wgl_hdc_swapbuffers.Do((h3d::WINAPIPROC)jimglSwapBuffers, (h3d::WINAPIPROC)wglSwapBuffersHook);
+			wgl_delcontext.Do((h3d::WINAPIPROC)jimglDeleteContext, (h3d::WINAPIPROC)wglDeleteContextHook);
 			return true;
 		}
 	}

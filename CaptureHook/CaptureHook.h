@@ -3,7 +3,11 @@
 #include "../Capture/CaptureHUB.h"
 
 namespace h3d {
+#ifndef _WIN64
 	typedef int(__stdcall * WINAPIPROC)();
+#else
+	typedef long long(__stdcall * WINAPIPROC)();
+#endif
 	typedef unsigned char byte;
 
 	WINAPIPROC GetVirtual(void* header_addrss, unsigned offset);

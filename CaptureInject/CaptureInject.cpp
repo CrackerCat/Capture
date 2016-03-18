@@ -82,12 +82,12 @@ bool h3d::InjectDLL(void * hProcess,const std::wstring & dllpath)
 	VirtualFreeExProc fVirtualFreeEx = (VirtualFreeExProc)GetProcAddress(hModule, str_VirtualFreeEx);
 
 	//在目标进程分配一个内存，用于存放dll的路径，以便进行LoadLibrary
-	DWORD  dwSize = (dllpath.size() + 1) * sizeof(wchar_t);
+	DWORD  dwSize =static_cast<DWORD>((dllpath.size() + 1) * sizeof(wchar_t));
 	LPVOID pStr = (*fVirtualAllocEx)(hProcess, NULL, dwSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (!pStr)
 		return false;
 
-	DWORD dwWriteSize = 0;
+	SIZE_T dwWriteSize = 0;
 	BOOL bStrWrite = (*fWriteProcessMemory)(hProcess, pStr, dllpath.c_str(), dwSize, &dwWriteSize);
 
 	LoadLibrayWProc fLoadLibrary = (LoadLibrayWProc)GetProcAddress(hModule, str_LoadLibray);
