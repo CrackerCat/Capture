@@ -5,6 +5,8 @@
 #include <Windows.h>
 
 namespace h3d {
+	class D3D11Texture;
+
 
 	class MemoryTexture : public CaptureTexture {
 		SDst cx;
@@ -39,8 +41,8 @@ namespace h3d {
 		virtual void WriteData(LPBYTE pData, int pitch);
 
 		//这个接口用来查询硬件Texture
-		virtual CaptureTexture* Query() {
-			return this;
+		virtual D3D11Texture* Query() {
+			return nullptr;
 		}
 	};
 
