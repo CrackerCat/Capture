@@ -7,7 +7,7 @@
 #include <Windows.h>
 #include <fstream>
 
-extern std::ofstream logstream;
+extern std::wofstream logstream;
 
 bool h3d::AdjustToken() {
 
@@ -28,10 +28,10 @@ bool h3d::AdjustToken() {
 
 	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(tp), NULL, NULL)) {
 		CloseHandle(hToken);
-		logstream << "AdjustTokenPrivileges Failed" << std::endl;
+		logstream << L"AdjustTokenPrivileges Failed" << std::endl;
 		return false;
 	}
-	logstream << "AdjustTokenPrivileges Succ" << std::endl;
+	logstream << L"AdjustTokenPrivileges Succ" << std::endl;
 	CloseHandle(hToken);
 	return true;
 }
@@ -87,13 +87,19 @@ bool h3d::InjectDLL(void * hProcess,const std::wstring & dllpath)
 	VirtualFreeExProc fVirtualFreeEx = (VirtualFreeExProc)GetProcAddress(hModule, str_VirtualFreeEx);
 
 	//在目标进程分配一个内存，用于存放dll的路径，以便进行LoadLibrary
+	logstream << L"InjectDLL Target = " << hProcess <<" Dll = "<< dllpath;
 	DWORD  dwSize =static_cast<DWORD>((dllpath.size() + 1) * sizeof(wchar_t));
 	LPVOID pStr = (*fVirtualAllocEx)(hProcess, NULL, dwSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	if (!pStr)
+	if (!pStr) {
+		logstream << L"VirtualAllocEx Failed Error Code = " <<GetLastError()<< std::endl;
 		return false;
-
+	}
 	SIZE_T dwWriteSize = 0;
 	BOOL bStrWrite = (*fWriteProcessMemory)(hProcess, pStr, dllpath.c_str(), dwSize, &dwWriteSize);
+	if (!bStrWrite) {
+		logstream << L"WriteProcessMemory Failed Error Code = " << GetLastError() << std::endl;
+		return false;
+	}
 
 	LoadLibrayWProc fLoadLibrary = (LoadLibrayWProc)GetProcAddress(hModule, str_LoadLibray);
 	if (!fLoadLibrary) {
@@ -105,6 +111,7 @@ bool h3d::InjectDLL(void * hProcess,const std::wstring & dllpath)
 	HANDLE hThread = (*fCreateRemoteThread)(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)fLoadLibrary, pStr, 0, &returnValue);
 
 	if (!hThread) {
+		logstream << L"CreateRemoteThread Failed Error Code = " << GetLastError() << std::endl;
 		(*fVirtualFreeEx)(hProcess, pStr, 0, MEM_RELEASE);
 		return false;
 	}
@@ -117,13 +124,13 @@ bool h3d::InjectDLL(void * hProcess,const std::wstring & dllpath)
 		if (exitCode == 0) {
 			CloseHandle(hThread);
 			(*fVirtualFreeEx)(hProcess, pStr, 0, MEM_RELEASE);
-			logstream << "LoadLibrary Failed" << std::endl;
+			logstream << L"LoadLibrary Failed" << std::endl;
 			return false;
 		}
 	}
 
 	CloseHandle(hThread);
 	(*fVirtualFreeEx)(hProcess, pStr, 0, MEM_RELEASE);
-	logstream << "InjectDLL Succ" << std::endl;
+	logstream << L"InjectDLL Succ" << std::endl;
 	return true;
 }

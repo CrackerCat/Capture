@@ -82,8 +82,10 @@ h3d::CaptureHUB* h3d::GraphicCapture(unsigned long processId)
 
 		CloseHandle(pi.hProcess);
 		CloseHandle(hProcess);
-		if (inject_result)
+		if (inject_result) {
+			logstream << "Inject Dll Failed " << std::endl;
 			return nullptr;
+		}
 	}
 
 	std::wstringstream wss;

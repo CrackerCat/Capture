@@ -183,7 +183,7 @@ bool h3d::LoadPlugin() {
 	MFStartup(MF_VERSION);
 #endif
 
-	logstream.open("Capture.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
+	logstream.open("Capture.log",std::ios_base::trunc);
 
 	return true;
 }
