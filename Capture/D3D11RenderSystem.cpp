@@ -156,6 +156,13 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 
 void h3d::D3D11Engine::Destroy()
 {
+	SR(reslove_il);
+	SR(reslove_vb);
+	SR(reslove_vs);
+	SR(reslove_ps);
+	SR(reslove_ps_ss);
+
+
 	SR(context);
 	SR(swap_chain);
 	SR(rt);
