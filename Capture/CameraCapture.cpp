@@ -8,10 +8,6 @@ using namespace h3d;
 
 #include <assert.h>
 
-
-
-
-
 std::list<CameraInfo> h3d::GetCameraInfos()
 {
 	std::list<CameraInfo> camera_list;
@@ -40,8 +36,45 @@ std::list<CameraInfo> h3d::GetCameraInfos()
 	return camera_list;
 }
 
-IMFMediaSource* pSource = NULL;
-IMFSourceReader* pReader = NULL;
+
+
+#include "D3D11RenderSystem.hpp"
+#undef min
+#include <algorithm>
+
+//warning! 1920*1080 * >= 30 FPS 可能会造成显卡带宽瓶颈
+class MemoryTextureEx : public h3d::MemoryTexture {
+	h3d::D3D11Texture* texture;
+
+public:
+
+	MemoryTextureEx(UINT format, SDst width, SDst height)
+		:MemoryTexture(format, width, height) {
+		texture = h3d::GetEngine().GetFactory().CreateTexture(width, height, h3d::BGRA8, h3d::EA_CPU_WRITE | h3d::EA_GPU_READ);
+	}
+	~MemoryTextureEx() {
+		delete texture;
+	}
+
+	void WriteData(LPBYTE pData, int pitch) override {
+		MemoryTexture::WriteData(pData, pitch);
+		MappedData dev = texture->Map();
+		MappedData mem = Map();
+
+		if (dev.RowPitch == mem.RowPitch)
+			memcpy(dev.pData, mem.pData, mem.RowPitch*GetHeight());
+		else
+			for (unsigned y = 0; y != GetHeight(); ++y)
+				memcpy(dev.pData + dev.RowPitch*y, mem.pData + mem.RowPitch*y, std::min(mem.RowPitch, dev.RowPitch));
+
+		UnMap();
+		texture->UnMap();
+	}
+
+	h3d::D3D11Texture* Query() override {
+		return texture;
+	}
+};
 
 
 h3d::CameraCapture::CameraCapture(CaptureInfo & info, unsigned int Index, CaptureCallBack callback)
@@ -100,7 +133,10 @@ h3d::CameraCapture::CameraCapture(CaptureInfo & info, unsigned int Index, Captur
 			UINT32 Width, Height;
 			MFGetAttributeSize(pType, MF_MT_FRAME_SIZE, &Width, &Height);
 			capture_info.oHeight = Height;
-			pTex = new MemoryTexture(HDYC, Width, Height);
+			if (GetEngine().GetLevel() >= D3D_FEATURE_LEVEL_9_1)
+				pTex = new MemoryTextureEx(HDYC, Width, Height);
+			else
+				pTex = new MemoryTexture(HDYC, Width, Height);
 		}
 
 		if (pType)
@@ -126,6 +162,7 @@ h3d::CameraCapture::CameraCapture(CaptureInfo & info, unsigned int Index, Captur
 h3d::CameraCapture::~CameraCapture()
 {
 	pSource->Release();
+	pReader->Release();
 }
 
 CaptureTexture * h3d::CameraCapture::Capture()

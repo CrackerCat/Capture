@@ -84,44 +84,6 @@ void h3d::MemoryTexture::WriteData(LPBYTE pData, int pitch)
 	}
 }
 
-#include "D3D11RenderSystem.hpp"
-#undef min
-#include <algorithm>
-
-class MemoryTextureEx : public h3d::MemoryTexture {
-	h3d::D3D11Texture* texture;
-
-public:
-
-	MemoryTextureEx(UINT format, SDst width, SDst height)
-		:MemoryTexture(format, width, height) {
-		texture = h3d::GetEngine().GetFactory().CreateTexture(width, height, h3d::BGRA8, h3d::EA_CPU_WRITE | h3d::EA_GPU_READ);
-	}
-	~MemoryTextureEx() {
-		delete texture;
-	}
-
-	void WriteData(LPBYTE pData, int pitch) override {
-		MemoryTexture::WriteData(pData, pitch);
-		MappedData dev = texture->Map();
-		MappedData mem = Map();
-
-		if (dev.RowPitch == mem.RowPitch)
-			memcpy(dev.pData, mem.pData, mem.RowPitch*GetHeight());
-		else
-			for (unsigned y = 0; y != GetHeight(); ++y)
-				memcpy(dev.pData + dev.RowPitch*y, mem.pData + mem.RowPitch*y,std::min(mem.RowPitch,dev.RowPitch));
-
-		UnMap();
-		texture->UnMap();
-	}
-
-	h3d::D3D11Texture* Query() override{
-		return texture;
-	}
-};
-
-
 HANDLE h3d::MemoryCapture::texture_mutexs[2] = { NULL,NULL };
 
 h3d::MemoryCapture::MemoryCapture(CaptureInfo & info, CaptureCallBack callback)
@@ -144,10 +106,7 @@ h3d::MemoryCapture::MemoryCapture(CaptureInfo & info, CaptureCallBack callback)
 	TextureAddress[1] = (PBYTE)mMemory + pInfo->Reserved2;
 
 	//Create Texture
-	if(GetEngine().GetLevel() >= D3D_FEATURE_LEVEL_9_1)
-		texture = new MemoryTextureEx(info.Reserved1, info.oWidth, info.oHeight);
-	else
-		texture = new MemoryTexture(info.Reserved1, info.oWidth, info.oHeight);
+	texture = new MemoryTexture(info.Reserved1, info.oWidth, info.oHeight);
 }
 
 h3d::MemoryCapture::~MemoryCapture()

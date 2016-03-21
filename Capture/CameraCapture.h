@@ -4,6 +4,10 @@
 #include "MemoryCapture.h"
 #include <string>
 #include <list>
+
+struct IMFMediaSource;
+struct IMFSourceReader;
+
 namespace h3d {
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -24,6 +28,9 @@ namespace h3d {
 		CameraCapture* pImpl;
 
 		MemoryTexture* pTex;
+
+		IMFMediaSource* pSource;
+		IMFSourceReader* pReader;
 	public:
 		CameraCapture(CaptureInfo & info,unsigned int Index,CaptureCallBack callback = 0);
 
