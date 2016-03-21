@@ -10,6 +10,12 @@
 
 namespace h3d
 {
+	enum TextureType {
+		Memory_Texture,
+		Device_Texture
+	};
+
+
 	class H3D_API CaptureTexture {
 	public:
 		CaptureTexture() {}

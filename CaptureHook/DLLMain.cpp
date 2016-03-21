@@ -20,6 +20,8 @@ bool capture_run = true;
 void* ptr_capture_info = NULL;
 HANDLE texture_mutex[2] = { NULL,NULL };
 
+wchar_t game_name[MAX_PATH];
+
 HANDLE hReadyEvent = NULL;
 HANDLE hStopEvent = NULL;
 HANDLE hBeginEvent = NULL;
@@ -109,9 +111,8 @@ DWORD WINAPI CaptureThread(LPVOID lpMainThread) {
 
 	//log path should be logs/CapthreHook******.log
 
-	wchar_t sProcessName[MAX_PATH] = {};
-	GetModuleBaseNameW(GetCurrentProcess(), NULL, sProcessName, MAX_PATH);
-	logstream << "CaptureThread Attach to Process : " << sProcessName << std::endl;
+	GetModuleBaseNameW(GetCurrentProcess(), NULL, game_name, MAX_PATH);
+	logstream << L"CaptureThread Attach to Process : " << game_name << std::endl;
 	//LogInfo("CaptureThread Attach to Process : ",sProcessName);
 
 	DWORD dThreadId;

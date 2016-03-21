@@ -5,6 +5,7 @@
 #include <Windows.h>
 
 namespace h3d {
+
 	class MemoryTexture : public CaptureTexture {
 		SDst cx;
 		SDst cy;
@@ -20,7 +21,7 @@ namespace h3d {
 		unsigned int B_MASK;
 	public:
 		MemoryTexture(UINT format, SDst width, SDst height);
-		~MemoryTexture();
+		virtual ~MemoryTexture();
 
 		SDst GetWidth() const override {
 			return cx;
@@ -33,9 +34,14 @@ namespace h3d {
 		void UnMap() override {
 		}
 
-		void ReSize(SDst width, SDst height);
+		//void ReSize(SDst width, SDst height);
 
-		void WriteData(LPBYTE pData, int pitch);
+		virtual void WriteData(LPBYTE pData, int pitch);
+
+		//这个接口用来查询硬件Texture
+		virtual CaptureTexture* Query() {
+			return this;
+		}
 	};
 
 

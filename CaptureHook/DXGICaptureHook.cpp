@@ -66,8 +66,7 @@ IDXGISwapChain* CreateDummySwapChain() {
 	swap_desc.Windowed = TRUE;
 
 	IDXGISwapChain* swap_chain = NULL;
-	D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_NULL;
-
+	D3D_DRIVER_TYPE	driver_type = D3D_DRIVER_TYPE_HARDWARE;
 
 	wchar_t dllPath[MAX_PATH];
 	SHGetFolderPathW(NULL, CSIDL_SYSTEM, NULL, SHGFP_TYPE_CURRENT, dllPath);
@@ -164,11 +163,21 @@ ENDPROC end_proc = NULL;
 
 
 void DispatchCapture(IDXGISwapChain * pSwapChain) {
+
 	IUnknown* device_unknown;
 	if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(IUnknown), reinterpret_cast<void**>(&device_unknown)))) {
-		ID3D11Device* device_d3d11;
+		bool d3d11_special = false;
+		/*Cod 使命召唤 能查出D3D10的device,但是实际是D3D11设备*/
+		if (wcscmp(game_name, L"iw6sp64_ship.exe") == 0 ||
+			wcscmp(game_name, L"iw6mp64_ship.exe") == 0 ||
+			wcscmp(game_name, L"justcause3.exe") == 0)
+			d3d11_special = true;
+
+
+		ID3D11Device* device_d3d11 = NULL;
 		ID3D10Device* device_d3d10 = NULL;
-		if (SUCCEEDED(device_unknown->QueryInterface(&device_d3d10))) {
+		/*一些D3D10程序 能查出D3D11的device,但实际是D3D10设备*/
+		if (!d3d11_special && SUCCEEDED(device_unknown->QueryInterface(&device_d3d10))) {
 			logstream << "DispatchCapture Goto D3D11" << std::endl;
 			h3d::D3D10CaptureSetup(pSwapChain);
 			capture_proc = h3d::D3D10Capture;

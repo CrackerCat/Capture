@@ -33,6 +33,7 @@ std::vector<char> ReadShaderFile(const wchar_t* path) {
 bool h3d::D3D11Engine::Construct(HWND hwnd)
 {
 	factory = new D3D11Factory();
+	support_level = 0x9000;
 	if (!factory)
 		return false;
 
@@ -90,7 +91,7 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 
 	D3D_FEATURE_LEVEL desired_levels[] = { D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0,
 		D3D_FEATURE_LEVEL_9_3, D3D_FEATURE_LEVEL_9_2 ,D3D_FEATURE_LEVEL_9_1 };
-	D3D_FEATURE_LEVEL support_level;
+	D3D_FEATURE_LEVEL support_feature;
 	D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_UNKNOWN;
 
 	UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
@@ -106,10 +107,11 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 	//推荐使用 pAdapter = NULL,driver_type = D3D_DRIVER_TYPE_HARDWARE
 	//或者枚举显卡 pAdapter,driver_type = D3D_DRIVER_TYPE_UNKNOWN
 	if (FAILED(
-		(*create)(pAdapter, driver_type, NULL,Flags, desired_levels, 6, D3D11_SDK_VERSION, &swap_desc, &swap_chain, &factory->device, &support_level, &context)
+		(*create)(pAdapter, driver_type, NULL,Flags, desired_levels, 6, D3D11_SDK_VERSION, &swap_desc, &swap_chain, &factory->device, &support_feature, &context)
 		))
 		return false;
 
+	support_level = static_cast<unsigned int>(support_feature);
 	ID3D11Texture2D* back_buffer = NULL;
 	swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&back_buffer));
 
@@ -180,6 +182,11 @@ h3d::D3D11Factory & h3d::D3D11Engine::GetFactory()
 	return *factory;
 }
 
+unsigned int h3d::D3D11Engine::GetLevel()
+{
+	return support_level;
+}
+
 void h3d::D3D11Engine::CopyTexture(D3D11Texture * dst, D3D11Texture * src)
 {
 	context->CopyResource(dst->texture, src->texture);
@@ -212,10 +219,26 @@ void h3d::D3D11Engine::ResloveTexture(D3D11Texture * dst, D3D11Texture * src) {
 	context->Draw(4, 0);
 }
 
+#include <assert.h>
+D3D11_MAP Mapping(UINT cpu_access) {
+	switch (cpu_access)
+	{
+	case D3D11_CPU_ACCESS_READ:
+		return D3D11_MAP_READ;
+	case D3D11_CPU_ACCESS_WRITE:
+		return D3D11_MAP_WRITE_DISCARD;
+	case D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE:
+		return D3D11_MAP_READ_WRITE;
+	default:
+		assert(false);
+		return D3D11_MAP_READ;
+	}
+}
+
 h3d::D3D11Texture::MappedData h3d::D3D11Engine::Map(D3D11Texture * tex)
 {
 	D3D11_MAPPED_SUBRESOURCE subRes;
-	if (FAILED(context->Map(tex->texture, 0, D3D11_MAP_READ, 0, &subRes)))
+	if (FAILED(context->Map(tex->texture, 0, Mapping(tex->info.CPUAccessFlags), 0, &subRes)))
 		throw std::runtime_error("D3D11Texture2D Map Failed");
 	return {reinterpret_cast<byte*>(subRes.pData),subRes.RowPitch };
 }

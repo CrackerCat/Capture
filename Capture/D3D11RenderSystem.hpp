@@ -73,6 +73,8 @@ namespace h3d {
 
 		D3D11Factory& GetFactory();
 
+		unsigned int GetLevel();
+
 		void CopyTexture(D3D11Texture* dst, D3D11Texture* src);
 		void ResloveTexture(D3D11Texture* dst, D3D11Texture* src);
 
@@ -84,6 +86,8 @@ namespace h3d {
 		D3D11Factory* factory;
 
 		ID3D11RenderTargetView* rt;
+
+		unsigned int support_level;
 
 		struct {
 			ID3D11Buffer* reslove_vb;
