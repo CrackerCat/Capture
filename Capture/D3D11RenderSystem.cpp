@@ -219,6 +219,18 @@ void h3d::D3D11Engine::ResloveTexture(D3D11Texture * dst, D3D11Texture * src) {
 	context->Draw(4, 0);
 }
 
+void h3d::D3D11Engine::BeginDraw(D3D11Texture * rt, BLEND_TYPE bt)
+{
+}
+
+void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture * src)
+{
+}
+
+void h3d::D3D11Engine::EndDraw()
+{
+}
+
 #include <assert.h>
 D3D11_MAP Mapping(UINT cpu_access) {
 	switch (cpu_access)
@@ -256,9 +268,8 @@ h3d::D3D11Factory::D3D11Factory()
 h3d::D3D11Texture * h3d::D3D11Factory::CreateGDITexture(SDst Width, SDst Height)
 {
 	CD3D11_TEXTURE2D_DESC texDesc(DXGI_FORMAT_B8G8R8A8_UNORM, Width, Height, 1, 1);
-	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	texDesc.Usage = D3D11_USAGE_DYNAMIC;
-	texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
 	texDesc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 
 	ID3D11Texture2D* texture = NULL;

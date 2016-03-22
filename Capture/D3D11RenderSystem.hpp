@@ -26,8 +26,8 @@ namespace h3d {
 		SDst GetWidth() const override;
 		SDst GetHeight() const override;
 
-		MappedData Map() override;
-		void UnMap() override;
+		virtual MappedData Map() override;
+		virtual void UnMap() override;
 
 		void Assign(D3D11Texture*);
 
@@ -49,7 +49,7 @@ namespace h3d {
 	class D3D11GDITexture :public h3d::D3D11Texture, public h3d::IGDI {
 	public:
 		D3D11GDITexture(ID3D11Texture2D* tex)
-			:D3D11Texture(tex) {
+			:D3D11Texture(tex),surface(NULL) {
 			tex->QueryInterface(&surface);
 		}
 
@@ -58,13 +58,20 @@ namespace h3d {
 		}
 
 		HDC GetDC() override {
-			HDC dc;
+			HDC dc = NULL;
 			surface->GetDC(TRUE, &dc);
 			return dc;
 		}
 
 		void ReleaseDC() override {
 			surface->ReleaseDC(NULL);
+		}
+
+		MappedData Map() override {
+			return{NULL,0 };
+		}
+		void UnMap() override {
+
 		}
 	private:
 		IDXGISurface1* surface;
@@ -90,6 +97,11 @@ namespace h3d {
 
 	class H3D_API RenderEngine{};
 
+	enum BLEND_TYPE {
+		OVERLAY_DRAW,
+		ALPHA_DRAW
+	};
+
 	class H3D_API D3D11Engine : public RenderEngine {
 	public:
 		bool Construct(HWND hwnd);
@@ -103,6 +115,10 @@ namespace h3d {
 
 		void CopyTexture(D3D11Texture* dst, D3D11Texture* src);
 		void ResloveTexture(D3D11Texture* dst, D3D11Texture* src);
+
+		void BeginDraw(D3D11Texture* rt, BLEND_TYPE bt);
+		void Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture* src);
+		void EndDraw();
 
 		D3D11Texture::MappedData Map(D3D11Texture*);
 		void UnMap(D3D11Texture*);

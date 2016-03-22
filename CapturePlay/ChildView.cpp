@@ -144,8 +144,37 @@ void CChildView::OnPaint()
 	}
 
 	if (gdi_capture) {
-		h3d::GDITexture* texture = static_cast<h3d::GDITexture*>(gdi_capture->Capture());
-		StretchBlt(dc,0, rect.Height(), rect.Width(), -rect.Height(),texture->GetDC(), 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
+		h3d::CaptureTexture* texture = gdi_capture->Capture();
+		if (!texture)
+			return;
+
+		CDC Dc;
+		Dc.CreateCompatibleDC(&dc);
+		BITMAPINFO bitmap_info;
+		bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bitmap_info.bmiHeader.biWidth = texture->GetWidth();
+		bitmap_info.bmiHeader.biHeight = texture->GetHeight();
+		bitmap_info.bmiHeader.biPlanes = 1;
+		bitmap_info.bmiHeader.biBitCount = 32;
+		bitmap_info.bmiHeader.biCompression = BI_RGB;
+
+		BYTE* pBitmapData = NULL;
+		HBITMAP hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS, reinterpret_cast<void**>(&pBitmapData), NULL, 0);
+		int bitmap_pitch = ((texture->GetWidth() * bitmap_info.bmiHeader.biBitCount + 31) / 32) * 4;
+
+		h3d::CaptureTexture::MappedData data = texture->Map();
+		if (pBitmapData && data.pData)
+			for (int y = 0; y != texture->GetHeight(); ++y)//在这里处理翻转逻辑
+				memcpy(pBitmapData + bitmap_pitch*(texture->GetHeight() - 1 - y), data.pData + data.RowPitch*y, texture->GetWidth() * 4);
+		texture->UnMap();
+
+		CBitmap Bitmap;
+		Bitmap.Attach(hBitmap);
+		Dc.SelectObject(&Bitmap);
+
+
+
+		dc.StretchBlt(0, 0, texture->GetWidth(), texture->GetHeight(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
 	}
 }
 

@@ -33,6 +33,8 @@ private:
 	};
 	std::list<CaptrueItem> items;
 	typedef std::list<CaptrueItem>::iterator item_iterator;
+
+	D3D11Texture* capture_tex;
 };
 
 
@@ -44,7 +46,10 @@ SceneCapture * h3d::SceneCapture::Serialize(const char * path)
 
 
 D3D11SceneCapture::D3D11SceneCapture(const char * path)
+	:capture_tex(NULL)
 {
+	//从xml里面载入相关信息，暂时都假定
+	capture_tex = GetEngine().GetFactory().CreateTexture(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), BGRA8, EA_GPU_WRITE | EA_CPU_READ);
 }
 
 D3D11SceneCapture::~D3D11SceneCapture()
@@ -55,6 +60,8 @@ D3D11SceneCapture::~D3D11SceneCapture()
 		delete iter->middle_tex;
 		iter = items.erase(iter);
 	}
+
+	delete capture_tex;
 }
 
 #ifdef min
@@ -65,9 +72,10 @@ D3D11SceneCapture::~D3D11SceneCapture()
 CaptureTexture * D3D11SceneCapture::Capture()
 {
 	item_iterator iter = items.begin();
+	//注意，先填充填图
 	for (; iter != items.end(); ++iter) {
-		CaptureTexture* texture = iter->capture->Capture();
-		if (texture->GetType() == Memory_Texture) {
+		if (iter->middle_tex) {
+			CaptureTexture* texture = iter->capture->Capture();
 			CaptureTexture::MappedData dev = iter->middle_tex->Map();
 			CaptureTexture::MappedData mem = texture->Map();
 
@@ -82,8 +90,22 @@ CaptureTexture * D3D11SceneCapture::Capture()
 		}
 	}
 
+	GetEngine().BeginDraw(capture_tex,OVERLAY_DRAW);
 
-	return nullptr;
+	iter = items.begin();
+	for (; iter != items.end(); ++iter) {
+		D3D11Texture* texture = NULL;
+		if (iter->middle_tex)
+			texture = iter->middle_tex;
+		else
+			texture = static_cast<D3D11Texture*>(iter->capture->Capture());
+
+		GetEngine().Draw(0,0, texture->GetWidth(), texture->GetHeight(), texture);
+	}
+
+	GetEngine().EndDraw();
+
+	return capture_tex;
 }
 
 void D3D11SceneCapture::Stop()
