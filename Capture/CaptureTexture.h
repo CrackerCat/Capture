@@ -8,6 +8,9 @@
 //AV_PIX_FMT_BGRA
 #define CAPTURETEXTURE_FORMAT "BGRA8 little-order"
 
+
+struct HDC__;
+
 namespace h3d
 {
 	enum TextureType {
@@ -18,7 +21,9 @@ namespace h3d
 
 	class H3D_API CaptureTexture {
 	public:
-		CaptureTexture() {}
+		CaptureTexture(TextureType tt)
+		:type(tt)
+		{}
 
 		struct MappedData {
 			byte* pData;
@@ -33,7 +38,17 @@ namespace h3d
 
 		virtual MappedData Map() = 0;
 		virtual void UnMap() = 0;
+
+		TextureType GetType() const {
+			return type;
+		}
 	private:
+		TextureType type;
+	};
+
+	struct IGDI { 
+		virtual HDC__ * GetDC() = 0;
+		virtual void ReleaseDC() = 0;
 	};
 }
 

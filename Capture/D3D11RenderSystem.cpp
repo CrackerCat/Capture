@@ -253,6 +253,21 @@ h3d::D3D11Factory::D3D11Factory()
 {
 }
 
+h3d::D3D11Texture * h3d::D3D11Factory::CreateGDITexture(SDst Width, SDst Height)
+{
+	CD3D11_TEXTURE2D_DESC texDesc(DXGI_FORMAT_B8G8R8A8_UNORM, Width, Height, 1, 1);
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.Usage = D3D11_USAGE_DYNAMIC;
+	texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	texDesc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+
+	ID3D11Texture2D* texture = NULL;
+	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture)))
+		return new D3D11GDITexture(texture);
+
+	return NULL;
+}
+
 h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, unsigned __int64 Handle)
 {
 	HANDLE hShare = reinterpret_cast<HANDLE>(Handle);
@@ -288,7 +303,7 @@ DXGI_FORMAT ConvertFormat(h3d::SWAPFORMAT format) {
 #pragma warning(disable:4244)
 h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, SWAPFORMAT Format,unsigned int access)
 {
-	CD3D11_TEXTURE2D_DESC texDesc(ConvertFormat(Format),Width, Height, 1, 1, 0);
+	CD3D11_TEXTURE2D_DESC texDesc(ConvertFormat(Format),Width, Height, 1, 1);
 
 	if (access == (EA_CPU_WRITE | EA_GPU_READ))
 		texDesc.Usage = D3D11_USAGE_DYNAMIC;

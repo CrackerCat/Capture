@@ -24,7 +24,7 @@ AVPixelFormat GetAVPixelFormat(h3d::SWAPFORMAT format) {
 
 #pragma warning(disable:4244)
 h3d::MemoryTexture::MemoryTexture(UINT format, SDst width, SDst height)
-	:src_format(format), cx(width), cy(height)
+	:CaptureTexture(Memory_Texture),src_format(format), cx(width), cy(height)
 {
 	ffmpeg_support = src_format != R10G10B10A2 && src_format != B10G10R10A2;
 	if (ffmpeg_support)

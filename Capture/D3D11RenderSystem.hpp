@@ -16,11 +16,12 @@ namespace h3d {
 		EA_GPU_WRITE = 1 << 3,
 	};
 
-	class H3D_API D3D11Texture : public CaptureTexture {
+	//todo 这个类应该继承GDITexture
+	class H3D_API D3D11Texture : public CaptureTexture{
 	public:
 		D3D11Texture(ID3D11Texture2D* tex);
 
-		~D3D11Texture();
+		virtual ~D3D11Texture();
 
 		SDst GetWidth() const override;
 		SDst GetHeight() const override;
@@ -45,12 +46,37 @@ namespace h3d {
 		friend class D3D11Engine;
 	};
 
+	class D3D11GDITexture :public h3d::D3D11Texture, public h3d::IGDI {
+	public:
+		D3D11GDITexture(ID3D11Texture2D* tex)
+			:D3D11Texture(tex) {
+			tex->QueryInterface(&surface);
+		}
+
+		~D3D11GDITexture() {
+			surface->Release();
+		}
+
+		HDC GetDC() override {
+			HDC dc;
+			surface->GetDC(TRUE, &dc);
+			return dc;
+		}
+
+		void ReleaseDC() override {
+			surface->ReleaseDC(NULL);
+		}
+	private:
+		IDXGISurface1* surface;
+	};
+
 	class H3D_API RenderFactory{};
 
 	class H3D_API D3D11Factory :public RenderFactory {
 	public:
 		D3D11Factory();
 
+		D3D11Texture* CreateGDITexture(SDst Width, SDst Height);
 		D3D11Texture* CreateTexture(SDst Width, SDst Height, unsigned __int64 Handle);
 		D3D11Texture* CreateTexture(SDst Width, SDst Height, SWAPFORMAT Format,unsigned int access);
 

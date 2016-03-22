@@ -100,9 +100,10 @@ HRESULT __stdcall EndScne(IDirect3DDevice9* device) {
 	end_scene.UnDo();
 
 	if (current_device == NULL && !target_acquired) {
-		gpu_support =  GPUCaptureCheck(device);
 		current_device = device;
 		D3D9CaptureSetup(device);
+		//do check after D3D9CaptureSetup
+		gpu_support = GPUCaptureCheck(device);
 		target_acquired = true;
 	}
 

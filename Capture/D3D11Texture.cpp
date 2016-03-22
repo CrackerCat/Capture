@@ -2,7 +2,7 @@
 #include "hash.hpp"
 
 h3d::D3D11Texture::D3D11Texture(ID3D11Texture2D * tex)
-	:texture(tex),d3d_rtv(NULL)
+	:CaptureTexture(Device_Texture),texture(tex),d3d_rtv(NULL)
 {
 	texture->GetDesc(&info);
 }

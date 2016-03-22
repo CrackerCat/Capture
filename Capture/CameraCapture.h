@@ -32,7 +32,7 @@ namespace h3d {
 		IMFMediaSource* pSource;
 		IMFSourceReader* pReader;
 	public:
-		CameraCapture(CaptureInfo & info,unsigned int Index,CaptureCallBack callback = 0);
+		CameraCapture(const CaptureInfo & info,unsigned int Index,CaptureCallBack callback = 0);
 
 		~CameraCapture();
 

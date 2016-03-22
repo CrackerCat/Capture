@@ -49,12 +49,13 @@ void CreateD3D9GPUCapture(IDirect3DDevice9* device) {
 	if (!sharedHandle)
 		goto clear_all;
 	IDirect3DTexture9* d3d9_texture = NULL;
+	//todo only d3d9 do this check D3D9EX
 	{
 		//!!!用D3D9设备从D3D11的共享句柄创建贴图!!!
+		//D3DERR_INVALIDCALL
 		h3d::BeginD3D9Patch(hD3D9Dll);
-
 		if (FAILED(device->CreateTexture(d3d9_captureinfo.oWidth, d3d9_captureinfo.oHeight, 1, D3DUSAGE_RENDERTARGET, (D3DFORMAT)d3d9_format, D3DPOOL_DEFAULT, &d3d9_texture, &sharedHandle))) {
-			logstream << "Warning: CreateTexture->OpenShared Failed" << std::endl;
+			logstream << "Warning: IDirect3DDevice9->CreateTexture Failed" << std::endl;
 			return;
 		}
 
