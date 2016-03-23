@@ -16,7 +16,7 @@ std::ofstream logstream;
 // CChildView
 
 CChildView::CChildView()
-:scene_capture(NULL)
+:scene_capture(NULL),sws_context(NULL)
 {
 	logstream.open("CapturePlay.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 }
@@ -35,6 +35,9 @@ CChildView::~CChildView()
 
 	if (logstream.is_open())
 		logstream.close();
+
+	if (sws_context)
+		sws_freeContext(sws_context);
 }
 
 
@@ -73,39 +76,56 @@ void CChildView::OnPaint()
 	CRect rect;
 	GetWindowRect(&rect);
 
+	static long window_w = rect.Width();
+	static long window_h = rect.Height();
+
 	if (scene_capture) {
 		h3d::CaptureTexture*  texture = scene_capture->Capture();
 
 		if (!texture)
 			return;
 
+		static long capture_w = texture->GetWidth();
+		static long capture_h = texture->GetHeight();
+
+		if (!sws_context)
+			sws_context = sws_getContext(texture->GetWidth(), texture->GetHeight(), AV_PIX_FMT_BGRA, rect.Width(), rect.Height(), AV_PIX_FMT_BGRA,  SWS_LANCZOS, NULL, NULL, NULL);
+
+		if (rect.Width() != window_w || rect.Height() != window_h || capture_w != texture->GetWidth() || capture_h != texture->GetHeight())
+		{
+			sws_freeContext(sws_context);
+			sws_context = sws_getContext(texture->GetWidth(), texture->GetHeight(), AV_PIX_FMT_BGRA, rect.Width(), rect.Height(), AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+			window_w = rect.Width();
+			window_h = rect.Height();
+			capture_w = texture->GetWidth();
+			capture_h = texture->GetHeight();
+		}
+
 		CDC Dc;
 		Dc.CreateCompatibleDC(&dc);
 		BITMAPINFO bitmap_info;
 		bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bitmap_info.bmiHeader.biWidth = texture->GetWidth();
-		bitmap_info.bmiHeader.biHeight = texture->GetHeight();
+		bitmap_info.bmiHeader.biWidth = rect.Width();
+		bitmap_info.bmiHeader.biHeight = rect.Height();
 		bitmap_info.bmiHeader.biPlanes = 1;
 		bitmap_info.bmiHeader.biBitCount = 32;
 		bitmap_info.bmiHeader.biCompression = BI_RGB;
 
 		BYTE* pBitmapData = NULL;
 		HBITMAP hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS, reinterpret_cast<void**>(&pBitmapData), NULL, 0);
-		int bitmap_pitch = ((texture->GetWidth() * bitmap_info.bmiHeader.biBitCount + 31) / 32) * 4;
+		int bitmap_pitch = ((rect.Width() * bitmap_info.bmiHeader.biBitCount + 31) / 32) * 4;
 
 		h3d::CaptureTexture::MappedData data = texture->Map();
-		if (pBitmapData)
-			for (int y = 0; y != texture->GetHeight();++y)//在这里处理翻转逻辑
-				memcpy(pBitmapData+bitmap_pitch*(texture->GetHeight()-y-1), data.pData+data.RowPitch*y, texture->GetWidth()*4);
+		BYTE* src_slice = data.pData + (texture->GetHeight() - 1)*data.RowPitch;
+		int src_pitch = -static_cast<int>(data.RowPitch);
+		sws_scale(sws_context, &src_slice, &src_pitch, 0, texture->GetHeight(), &pBitmapData, &bitmap_pitch);
 		texture->UnMap();
 
 		CBitmap Bitmap;
 		Bitmap.Attach(hBitmap);
 		Dc.SelectObject(&Bitmap);
 
-		
-
-		dc.StretchBlt(0,0, rect.Width(), rect.Height(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
+		dc.StretchBlt(0,0, rect.Width(), rect.Height(), &Dc, 0, 0,rect.Width(), rect.Height(), SRCCOPY);
 	}
 }
 

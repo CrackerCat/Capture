@@ -119,38 +119,6 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 
 	{
 		{
-			std::vector<char> buffer = ReadShaderFile(L"Shader/ResloveVS.cso");
-			D3D11_INPUT_ELEMENT_DESC layout_desc[] = {
-				{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			};
-			factory->device->CreateVertexShader(&buffer[0], buffer.size(), NULL, &reslove_vs);
-			factory->device->CreateInputLayout(layout_desc, 1, &buffer[0], buffer.size(), &reslove_il);
-
-			buffer.swap(ReadShaderFile(L"Shader/ReslovePS.cso"));
-			factory->device->CreatePixelShader(&buffer[0], buffer.size(), NULL, &reslove_ps);
-		}
-
-		float vertices[4 * 4] = {
-			1,1,1,1,
-			1,-1,1,1,
-			-1,1,1,1,
-			-1,-1,1,1
-		};
-		vb_stride = 16;
-		vb_offset = 0;
-
-		CD3D11_BUFFER_DESC vbDesc(sizeof(vertices), D3D11_BIND_VERTEX_BUFFER, D3D11_USAGE_IMMUTABLE);
-		D3D11_SUBRESOURCE_DATA resDesc;
-		resDesc.pSysMem = vertices;
-		factory->device->CreateBuffer(&vbDesc, &resDesc, &reslove_vb);
-
-		CD3D11_SAMPLER_DESC point_sampler(D3D11_DEFAULT);
-		point_sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		factory->device->CreateSamplerState(&point_sampler, &reslove_ps_ss);
-	}
-
-	{
-		{
 			std::vector<char> buffer = ReadShaderFile(L"Shader/DrawVS.cso");
 			D3D11_INPUT_ELEMENT_DESC layout_desc[] = {
 				{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -187,11 +155,6 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 		CD3D11_SAMPLER_DESC point_sampler(D3D11_DEFAULT);
 		point_sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		factory->device->CreateSamplerState(&point_sampler, &draw_ps_ss);
-
-		CD3D11_BUFFER_DESC cbDesc(sizeof(draw_ps_params), D3D11_BIND_CONSTANT_BUFFER, D3D11_USAGE_DEFAULT);
-		draw_ps_params[0] = 0.f;
-		resDesc.pSysMem = draw_ps_params;
-		factory->device->CreateBuffer(&cbDesc, &resDesc, &draw_ps_cb);
 	}
 
 	back_buffer->Release();
@@ -205,15 +168,8 @@ bool h3d::D3D11Engine::Construct(HWND hwnd)
 
 void h3d::D3D11Engine::Destroy()
 {
-	SR(reslove_il);
-	SR(reslove_vb);
-	SR(reslove_vs);
-	SR(reslove_ps);
-	SR(reslove_ps_ss);
-
 	SR(draw_il);
 	SR(draw_ps);
-	SR(draw_ps_cb);
 	SR(draw_ps_ss);
 	SR(draw_vb);
 	SR(draw_vs);
@@ -245,33 +201,6 @@ void h3d::D3D11Engine::CopyTexture(D3D11Texture * dst, D3D11Texture * src)
 	context->CopyResource(dst->texture, src->texture);
 }
 
-void h3d::D3D11Engine::ResloveTexture(D3D11Texture * dst, D3D11Texture * src) {
-	context->IASetVertexBuffers(0, 1, &reslove_vb, &vb_stride, &vb_offset);
-	context->IASetInputLayout(reslove_il);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	context->VSSetShader(reslove_vs, NULL, 0);
-	context->PSSetShader(reslove_ps, NULL, 0);
-	context->PSSetSamplers(0, 1, &reslove_ps_ss);
-
-	ID3D11RenderTargetView* dst_rtv = dst->RetriveD3DRenderTargetView();
-	ID3D11ShaderResourceView* src_srv = src->RetriveD3DShaderResouceView();
-
-	context->PSSetShaderResources(0, 1, &src_srv);
-	context->OMSetRenderTargets(1, &dst_rtv, NULL);
-
-	D3D11_VIEWPORT vp;
-	vp.TopLeftX = 0;
-	vp.TopLeftY = 0;
-	vp.Height =static_cast<FLOAT>(dst->info.Height);
-	vp.Width = static_cast<FLOAT>(dst->info.Width);
-	vp.MinDepth = 0;
-	vp.MaxDepth = 1;
-	context->RSSetViewports(1, &vp);
-
-	context->Draw(4, 0);
-}
-
 void h3d::D3D11Engine::BeginDraw(D3D11Texture * rt, BLEND_TYPE bt)
 {
 	ID3D11RenderTargetView* rtv = rt->RetriveD3DRenderTargetView();
@@ -295,7 +224,6 @@ void h3d::D3D11Engine::BeginDraw(D3D11Texture * rt, BLEND_TYPE bt)
 	context->VSSetShader(draw_vs, NULL, 0);
 	context->PSSetShader(draw_ps, NULL, 0);
 	context->PSSetSamplers(0, 1, &draw_ps_ss);
-	context->PSSetConstantBuffers(0, 1, &draw_ps_cb);
 }
 
 void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture * src)
@@ -312,8 +240,6 @@ void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Textur
 	context->Map(draw_vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &subRes);
 	memcpy(subRes.pData, draw_vertexs, sizeof(draw_vertexs));
 	context->Unmap(draw_vb, 0);
-
-	//Update PSCB;
 
 	ID3D11ShaderResourceView* srv = src->RetriveD3DShaderResouceView();
 	context->PSSetShaderResources(0, 1, &srv);
@@ -401,6 +327,12 @@ DXGI_FORMAT ConvertFormat(h3d::SWAPFORMAT format) {
 		return DXGI_FORMAT_B5G5R5A1_UNORM;
 	case h3d::B5G6R5:
 		return DXGI_FORMAT_B5G6R5_UNORM;
+	case h3d::RGBA8:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case h3d::RGBA16:
+		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case h3d::R10G10B10XRA2:
+		return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
 	}
 	return DXGI_FORMAT_UNKNOWN;
 }

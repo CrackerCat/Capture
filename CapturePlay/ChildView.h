@@ -8,6 +8,10 @@
 #include <list>
 #pragma once
 
+extern "C"
+{
+#include <libswscale/swscale.h>
+}
 
 #include <fstream>
 extern std::ofstream logstream;
@@ -23,7 +27,7 @@ public:
 public:
 	h3d::SceneCapture* scene_capture;
 	std::list<HANDLE> hKeepAlives;
-
+	SwsContext* sws_context;
 // ×÷˜I
 public:
 	BOOL IterWindow(HWND hwnd);

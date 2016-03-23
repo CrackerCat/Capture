@@ -161,9 +161,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ResloveVS.hlsl">
-      <Filter>RenderSystem\Shader</Filter>
-    </FxCompile>
     <FxCompile Include="ReslovePS.hlsl">
       <Filter>RenderSystem\Shader</Filter>
     </FxCompile>
