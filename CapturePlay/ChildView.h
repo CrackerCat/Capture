@@ -1,10 +1,11 @@
 
 // ChildView.h : CChildView 類別的介面
 //
-#include "..\Capture\CaptureHUB.h"
+#include "..\Capture\SceneCapture.h"
 #include "T.h"
 #include <string>
 #include <vector>
+#include <list>
 #pragma once
 
 
@@ -20,12 +21,9 @@ public:
 
 // 屬性
 public:
-	h3d::CaptureHUB* camera_capture;
-	h3d::CaptureHUB* game_capture;
-	h3d::CaptureHUB* gdi_capture;
-	HANDLE hKeepAlive;
+	h3d::SceneCapture* scene_capture;
+	std::list<HANDLE> hKeepAlives;
 
-	CListCtrl cList;
 // 作業
 public:
 	BOOL IterWindow(HWND hwnd);

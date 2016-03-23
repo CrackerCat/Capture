@@ -205,7 +205,7 @@ CaptureTexture* GDICapture::Capture() {
 	else
 		capture_gdi = static_cast<GDITexture*>(capture_tex);
 
-	if (!StretchBlt(capture_gdi->GetDC(), 0, capture_tex->GetHeight(), capture_tex->GetWidth(), -(int)capture_tex->GetHeight(), src_hdc, 0, 0, cx, cy, SRCCOPY)) {
+	if (!StretchBlt(capture_gdi->GetDC(), 0, 0, capture_tex->GetWidth(),capture_tex->GetHeight(), src_hdc, 0, 0, cx, cy, SRCCOPY)) {
 		ReleaseDC(hwnd,src_hdc);
 		capture_gdi->ReleaseDC();
 		return NULL;

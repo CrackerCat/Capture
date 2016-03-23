@@ -131,6 +131,7 @@ namespace h3d {
 
 		unsigned int support_level;
 
+		//not useful
 		struct {
 			ID3D11Buffer* reslove_vb;
 			UINT vb_stride;
@@ -139,6 +140,25 @@ namespace h3d {
 			ID3D11VertexShader* reslove_vs;
 			ID3D11PixelShader* reslove_ps;
 			ID3D11SamplerState* reslove_ps_ss;
+		};
+
+		struct __declspec(align(16)) vertex {
+			float x, y, z, w;
+			float u, v;
+		};
+
+		D3D11_VIEWPORT curr_vp;
+		struct {
+			ID3D11Buffer* draw_vb;
+			UINT draw_stride_offset[2];
+			vertex draw_vertexs[4];
+
+			ID3D11InputLayout* draw_il;
+			ID3D11VertexShader* draw_vs;
+			ID3D11PixelShader* draw_ps;
+			ID3D11Buffer* draw_ps_cb;
+			float draw_ps_params[16];
+			ID3D11SamplerState* draw_ps_ss;
 		};
 	};
 

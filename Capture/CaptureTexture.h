@@ -13,22 +13,21 @@ struct HDC__;
 
 namespace h3d
 {
-	enum TextureType {
-		Memory_Texture,
-		Device_Texture
-	};
-
-
 	class H3D_API CaptureTexture {
 	public:
-		CaptureTexture(TextureType tt)
-		:type(tt)
-		{}
-
 		struct MappedData {
 			byte* pData;
 			unsigned long RowPitch;
 		};
+
+		enum TextureType {
+			Memory_Texture,
+			Device_Texture
+		};
+
+		CaptureTexture(TextureType tt)
+			:type(tt)
+		{}
 
 		virtual ~CaptureTexture() {}
 
@@ -38,10 +37,11 @@ namespace h3d
 
 		virtual MappedData Map() = 0;
 		virtual void UnMap() = 0;
-
+	public:
 		TextureType GetType() const {
 			return type;
 		}
+		
 	private:
 		TextureType type;
 	};

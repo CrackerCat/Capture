@@ -16,7 +16,7 @@ std::ofstream logstream;
 // CChildView
 
 CChildView::CChildView()
-:game_capture(NULL),camera_capture(NULL), hKeepAlive(NULL),gdi_capture(NULL)
+:scene_capture(NULL)
 {
 	logstream.open("CapturePlay.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 }
@@ -25,14 +25,13 @@ CChildView::CChildView()
 
 CChildView::~CChildView()
 {
-	if (game_capture)
-		h3d::EndCapture(game_capture);
+	if (scene_capture)
+		scene_capture->Stop();
 
-	if (camera_capture)
-		h3d::EndCapture(camera_capture);
-
-	if (hKeepAlive)
-		CloseHandle(hKeepAlive);
+	delete scene_capture;
+	
+	for(auto handle:hKeepAlives)
+		CloseHandle(handle);
 
 	if (logstream.is_open())
 		logstream.close();
@@ -65,7 +64,6 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 
 	return TRUE;
 }
-#include "../Capture/GDICapture.h"
 
 #pragma warning(disable:4018)
 void CChildView::OnPaint() 
@@ -75,41 +73,8 @@ void CChildView::OnPaint()
 	CRect rect;
 	GetWindowRect(&rect);
 
-	if (camera_capture) {
-		h3d::CaptureTexture*  texture = camera_capture->Capture();
-
-		if (!texture)
-			return;
-
-		CDC Dc;
-		Dc.CreateCompatibleDC(&dc);
-		BITMAPINFO bitmap_info;
-		bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bitmap_info.bmiHeader.biWidth = texture->GetWidth();
-		bitmap_info.bmiHeader.biHeight = texture->GetHeight();
-		bitmap_info.bmiHeader.biPlanes = 1;
-		bitmap_info.bmiHeader.biBitCount = 32;
-		bitmap_info.bmiHeader.biCompression = BI_RGB;
-
-		BYTE* pBitmapData = NULL;
-		HBITMAP hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS,reinterpret_cast<void**>(&pBitmapData), NULL, 0);
-
-		h3d::CaptureTexture::MappedData data = texture->Map();
-		if (pBitmapData)
-			memcpy(pBitmapData, data.pData, texture->GetWidth()*texture->GetHeight() * 4);
-		texture->UnMap();
-
-		CBitmap Bitmap;
-		Bitmap.Attach(hBitmap);
-		Dc.SelectObject(&Bitmap);
-
-		//坑爹HBITMAP坐标系 源开始
-		dc.StretchBlt(0,rect.Height(), rect.Width(),-rect.Height(), &Dc, 0,0,texture->GetWidth(),texture->GetHeight(),SRCCOPY);
-	}
-	
-	//无聊的代码。绘制 1/8区域的大小
-	if (game_capture) {
-		h3d::CaptureTexture*  texture = game_capture->Capture();
+	if (scene_capture) {
+		h3d::CaptureTexture*  texture = scene_capture->Capture();
 
 		if (!texture)
 			return;
@@ -131,7 +96,7 @@ void CChildView::OnPaint()
 		h3d::CaptureTexture::MappedData data = texture->Map();
 		if (pBitmapData)
 			for (int y = 0; y != texture->GetHeight();++y)//在这里处理翻转逻辑
-				memcpy(pBitmapData+bitmap_pitch*(texture->GetHeight()-1-y), data.pData+data.RowPitch*y, texture->GetWidth()*4);
+				memcpy(pBitmapData+bitmap_pitch*(texture->GetHeight()-y-1), data.pData+data.RowPitch*y, texture->GetWidth()*4);
 		texture->UnMap();
 
 		CBitmap Bitmap;
@@ -140,41 +105,7 @@ void CChildView::OnPaint()
 
 		
 
-		dc.StretchBlt(0,0, texture->GetWidth(), texture->GetHeight(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
-	}
-
-	if (gdi_capture) {
-		h3d::CaptureTexture* texture = gdi_capture->Capture();
-		if (!texture)
-			return;
-
-		CDC Dc;
-		Dc.CreateCompatibleDC(&dc);
-		BITMAPINFO bitmap_info;
-		bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bitmap_info.bmiHeader.biWidth = texture->GetWidth();
-		bitmap_info.bmiHeader.biHeight = texture->GetHeight();
-		bitmap_info.bmiHeader.biPlanes = 1;
-		bitmap_info.bmiHeader.biBitCount = 32;
-		bitmap_info.bmiHeader.biCompression = BI_RGB;
-
-		BYTE* pBitmapData = NULL;
-		HBITMAP hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS, reinterpret_cast<void**>(&pBitmapData), NULL, 0);
-		int bitmap_pitch = ((texture->GetWidth() * bitmap_info.bmiHeader.biBitCount + 31) / 32) * 4;
-
-		h3d::CaptureTexture::MappedData data = texture->Map();
-		if (pBitmapData && data.pData)
-			for (int y = 0; y != texture->GetHeight(); ++y)//在这里处理翻转逻辑
-				memcpy(pBitmapData + bitmap_pitch*(texture->GetHeight() - 1 - y), data.pData + data.RowPitch*y, texture->GetWidth() * 4);
-		texture->UnMap();
-
-		CBitmap Bitmap;
-		Bitmap.Attach(hBitmap);
-		Dc.SelectObject(&Bitmap);
-
-
-
-		dc.StretchBlt(0, 0, texture->GetWidth(), texture->GetHeight(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
+		dc.StretchBlt(0,0, rect.Width(), rect.Height(), &Dc, 0, 0, texture->GetWidth(), texture->GetHeight(), SRCCOPY);
 	}
 }
 
@@ -219,27 +150,23 @@ DWORD FindProcess(const wchar_t* processName) {
 #define PAINT_TIMER 1
 #include <sstream>
 
+#include "../Capture/SceneCapture.h"
 void CChildView::GameCapture(DWORD processId)
 {
 	if (!processId)
 		return;
 
-	if (game_capture) {
-		h3d::EndCapture(game_capture);
-		KillTimer(PAINT_TIMER);
-	}
-
-	if (hKeepAlive)
-		CloseHandle(hKeepAlive);
-	hKeepAlive = NULL;
-
+	if (!scene_capture)
+		scene_capture = h3d::SceneCapture::Serialize(NULL);
+	
 
 	std::wstringstream wss;
 	wss << OBS_KEEP_ALIVE << processId;
-	hKeepAlive = CreateEventW(NULL, FALSE, FALSE, wss.str().c_str());
+	HANDLE keep_alive = CreateEventW(NULL, FALSE, FALSE, wss.str().c_str());
+	hKeepAlives.push_back(keep_alive);
 
-	game_capture = h3d::GraphicCapture(processId);
-	SetTimer(PAINT_TIMER,40, 0);
+	if (scene_capture->AddCapture("123", h3d::GAME_CAPTURE, processId))
+		SetTimer(PAINT_TIMER,40, 0);
 }
 
 
@@ -262,18 +189,12 @@ void CChildView::OnGDICapture()
 	if (box.ref_index != LB_ERR) {
 		auto& window = windows[box.ref_index];
 
-		CRect rect;
-		GetWindowRect(&rect);
+		if (!scene_capture)
+			scene_capture = h3d::SceneCapture::Serialize(NULL);
 
-		h3d::CaptureInfo info;
-		info.sNative =reinterpret_cast<unsigned __int64>(window.hWnd);
-
-		if (gdi_capture)
-			delete gdi_capture;
-		gdi_capture = new h3d::GDICapture(info);
-		SetTimer(PAINT_TIMER, 40, 0);
+		if (scene_capture->AddCapture("321", h3d::WINDOW_CAPTURE,reinterpret_cast<unsigned long>(window.hWnd)))
+			SetTimer(PAINT_TIMER, 40, 0);
 	}
-	
 }
 
 
@@ -408,12 +329,10 @@ void CChildView::OnCameraCapture()
 	CameraDialog box;
 	box.DoModal();
 	if (box.camera_index != LB_ERR) {
-		if (camera_capture) {
-			h3d::EndCapture(camera_capture);
-			KillTimer(PAINT_TIMER);
-		}
+		if (!scene_capture)
+			scene_capture = h3d::SceneCapture::Serialize(NULL);
 
-		camera_capture = new h3d::CameraCapture(h3d::CaptureInfo(), box.camera_index);
-		SetTimer(PAINT_TIMER, 40, 0);
+		if (scene_capture->AddCapture("camera", h3d::GAME_CAPTURE, box.camera_index))
+			SetTimer(PAINT_TIMER, 40, 0);
 	}
 }

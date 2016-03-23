@@ -167,6 +167,9 @@
     <FxCompile Include="ReslovePS.hlsl">
       <Filter>RenderSystem\Shader</Filter>
     </FxCompile>
+    <FxCompile Include="DrawVS.hlsl">
+      <Filter>RenderSystem\Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="tinyxml\rxml_attribute.inl">

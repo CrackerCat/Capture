@@ -12,9 +12,8 @@
 IMPLEMENT_DYNAMIC(T, CDialog)
 
 T::T(std::vector<WindowData>& wins,const wchar_t* str_caption,CWnd* pParent /*=NULL*/)
-	:ref(wins), CDialog(IDD_T, pParent),caption(str_caption)
+	:ref(wins), CDialog(IDD_T, pParent),caption(str_caption), ref_index(LB_ERR)
 {
-
 }
 
 T::~T()

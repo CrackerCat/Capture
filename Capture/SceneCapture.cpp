@@ -34,6 +34,7 @@ private:
 	std::list<CaptrueItem> items;
 	typedef std::list<CaptrueItem>::iterator item_iterator;
 
+	D3D11Texture* capture_rtv;
 	D3D11Texture* capture_tex;
 };
 
@@ -46,10 +47,11 @@ SceneCapture * h3d::SceneCapture::Serialize(const char * path)
 
 
 D3D11SceneCapture::D3D11SceneCapture(const char * path)
-	:capture_tex(NULL)
+	:capture_tex(NULL),capture_rtv(NULL)
 {
 	//从xml里面载入相关信息，暂时都假定
-	capture_tex = GetEngine().GetFactory().CreateTexture(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), BGRA8, EA_GPU_WRITE | EA_CPU_READ);
+	capture_rtv = GetEngine().GetFactory().CreateTexture(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), BGRA8, EA_GPU_WRITE);
+	capture_tex = GetEngine().GetFactory().CreateTexture(capture_rtv->GetWidth(),capture_rtv->GetHeight(), BGRA8,EA_CPU_READ);
 }
 
 D3D11SceneCapture::~D3D11SceneCapture()
@@ -90,7 +92,7 @@ CaptureTexture * D3D11SceneCapture::Capture()
 		}
 	}
 
-	GetEngine().BeginDraw(capture_tex,OVERLAY_DRAW);
+	GetEngine().BeginDraw(capture_rtv,OVERLAY_DRAW);
 
 	iter = items.begin();
 	for (; iter != items.end(); ++iter) {
@@ -104,7 +106,7 @@ CaptureTexture * D3D11SceneCapture::Capture()
 	}
 
 	GetEngine().EndDraw();
-
+	capture_tex->Assign(capture_rtv);
 	return capture_tex;
 }
 
@@ -144,7 +146,7 @@ bool D3D11SceneCapture::AddCapture(const char * name, CaptureType type, unsigned
 
 	CaptureTexture* texture = capture->Capture();
 	//warning! 1920*1080 * >= 30 FPS 可能会造成显卡带宽瓶颈
-	if (texture->GetType() == Memory_Texture)
+	if (texture->GetType() == CaptureTexture::Memory_Texture)
 		item.middle_tex = GetEngine().GetFactory().CreateTexture(texture->GetWidth(), texture->GetHeight(), BGRA8, EA_CPU_WRITE | EA_GPU_READ);
 	else
 		item.middle_tex = NULL;
