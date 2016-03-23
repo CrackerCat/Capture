@@ -195,6 +195,7 @@
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <AdditionalLibraryDirectories>../ffmpeg</AdditionalLibraryDirectories>
       <AdditionalDependencies>libswscale/swscale.lib;libavutil/avutil.lib;</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
