@@ -218,7 +218,7 @@ void CreateOpenGLCPUCapture(RECT &rc)
 
 	glGenBuffers(NUM_GLBACKBUFF, gltextures);
 
-	DWORD dwSize = rc.right*rc.bottom;
+	DWORD dwSize = rc.right*rc.bottom*4;
 
 	GLint lastPPB;
 	glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &lastPPB);
@@ -244,8 +244,8 @@ void CreateOpenGLCPUCapture(RECT &rc)
 
 void CreateOpenGLCapture(RECT &rc)
 {
-	if (bFBOAvailable && nvidia_extend_support && CreateOpenGLGPUCapture(rc))
-		return;
+	/*if (bFBOAvailable && nvidia_extend_support && CreateOpenGLGPUCapture(rc))
+		return;*/
 
 	CreateOpenGLCPUCapture(rc);
 }
@@ -350,10 +350,8 @@ void OpenGLHDCCapture(HDC hDC)
 					copy_data = (void*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 					if (copy_data)
 					{
-						curr_capture = next_capture;
+						copy_index = next_capture;
 						glLockedTextures[next_capture] = true;
-
-
 						SetEvent(copy_event);
 					}
 
