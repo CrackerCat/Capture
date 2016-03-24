@@ -16,7 +16,7 @@ std::ofstream logstream;
 // CChildView
 
 CChildView::CChildView()
-:scene_capture(NULL),sws_context(NULL)
+:scene_capture(NULL),sws_context(NULL),hBitmap(NULL)
 {
 	logstream.open("CapturePlay.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
 }
@@ -101,29 +101,43 @@ void CChildView::OnPaint()
 			capture_h = texture->GetHeight();
 		}
 
-		CDC Dc;
-		Dc.CreateCompatibleDC(&dc);
-		BITMAPINFO bitmap_info;
-		bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bitmap_info.bmiHeader.biWidth = rect.Width();
-		bitmap_info.bmiHeader.biHeight = rect.Height();
-		bitmap_info.bmiHeader.biPlanes = 1;
-		bitmap_info.bmiHeader.biBitCount = 32;
-		bitmap_info.bmiHeader.biCompression = BI_RGB;
+		static CDC Dc;
+		if(!Dc.m_hDC)
+			Dc.CreateCompatibleDC(&dc);
+		static BITMAPINFO bitmap_info;
 
-		BYTE* pBitmapData = NULL;
-		HBITMAP hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS, reinterpret_cast<void**>(&pBitmapData), NULL, 0);
+		static BYTE* pBitmapData = NULL;
+		if (!hBitmap) {
+			bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+			bitmap_info.bmiHeader.biWidth = rect.Width();
+			bitmap_info.bmiHeader.biHeight = rect.Height();
+			bitmap_info.bmiHeader.biPlanes = 1;
+			bitmap_info.bmiHeader.biBitCount = 32;
+			bitmap_info.bmiHeader.biCompression = BI_RGB;
+
+			hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS, reinterpret_cast<void**>(&pBitmapData), NULL, 0);
+		}
+
+		if (rect.Width() != window_w || rect.Height() != window_h) {
+			bitmap_info.bmiHeader.biWidth = rect.Width();
+			bitmap_info.bmiHeader.biHeight = rect.Height();
+
+			DeleteObject(hBitmap);
+			pBitmapData = NULL;
+			hBitmap = ::CreateDIBSection(NULL, &bitmap_info, DIB_RGB_COLORS, reinterpret_cast<void**>(&pBitmapData), NULL, 0);
+		}
+
 		int bitmap_pitch = ((rect.Width() * bitmap_info.bmiHeader.biBitCount + 31) / 32) * 4;
+
+		if (hBitmap)
+			Dc.SelectObject(hBitmap);
+
 
 		h3d::CaptureTexture::MappedData data = texture->Map();
 		BYTE* src_slice = data.pData + (texture->GetHeight() - 1)*data.RowPitch;
 		int src_pitch = -static_cast<int>(data.RowPitch);
 		sws_scale(sws_context, &src_slice, &src_pitch, 0, texture->GetHeight(), &pBitmapData, &bitmap_pitch);
 		texture->UnMap();
-
-		CBitmap Bitmap;
-		Bitmap.Attach(hBitmap);
-		Dc.SelectObject(&Bitmap);
 
 		dc.StretchBlt(0,0, rect.Width(), rect.Height(), &Dc, 0, 0,rect.Width(), rect.Height(), SRCCOPY);
 	}
@@ -198,6 +212,7 @@ BOOL __stdcall EnumVisibleWindow(HWND hwnd, LPARAM lParam) {
 
 void CChildView::OnGDICapture()
 {
+	KillTimer(PAINT_TIMER);
 	//枚举窗口
 	windows.clear();
 	windows.emplace_back(L"桌面", ::GetDesktopWindow());
@@ -313,6 +328,7 @@ void CChildView::FilterWindow(bool game)
 
 void CChildView::OnGameCapture()
 {
+	KillTimer(PAINT_TIMER);
 	//枚举窗口
 	windows.clear();
 	EnumWindows(EnumVisibleWindow,(LPARAM)this);
@@ -346,6 +362,7 @@ void CChildView::OnTimer(UINT_PTR nIDEvent)
 #include "../Capture/CameraCapture.h"
 void CChildView::OnCameraCapture()
 {
+	KillTimer(PAINT_TIMER);
 	CameraDialog box;
 	box.DoModal();
 	if (box.camera_index != LB_ERR) {

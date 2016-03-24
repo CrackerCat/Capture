@@ -15,6 +15,8 @@ AVPixelFormat GetAVPixelFormat(h3d::SWAPFORMAT format) {
 		return AV_PIX_FMT_BGRA;
 	case h3d::B5G6R5:case h3d::B5G6R5A1:case h3d::B5G6R5X1:
 		return AV_PIX_FMT_RGB565;
+	case h3d::RGBA8:
+		return AV_PIX_FMT_RGBA;
 	case h3d::HDYC:
 		return AV_PIX_FMT_UYVY422;
 	}

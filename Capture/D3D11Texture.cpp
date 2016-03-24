@@ -73,7 +73,8 @@ ID3D11ShaderResourceView * h3d::D3D11Texture::RetriveD3DShaderResouceView()
 
 ID3D11RenderTargetView * h3d::D3D11Texture::RetriveD3DRenderTargetView()
 {
-	d3d_rtv = GetEngine().GetFactory().CreateRTV(texture,NULL);
+	if(!d3d_rtv)
+		d3d_rtv = GetEngine().GetFactory().CreateRTV(texture,NULL);
 
 	//todo...
 

@@ -147,7 +147,7 @@ bool D3D11SceneCapture::AddCapture(const char * name, CaptureType type, unsigned
 	CaptureTexture* texture = capture->Capture();
 	//warning! 1920*1080 * >= 30 FPS 可能会造成显卡带宽瓶颈
 	if (texture->GetType() == CaptureTexture::Memory_Texture)
-		item.middle_tex = GetEngine().GetFactory().CreateTexture(texture->GetWidth(), texture->GetHeight(), BGRA8, EA_CPU_WRITE | EA_GPU_READ);
+		item.middle_tex = GetEngine().GetFactory().CreateTexture(texture->GetWidth(), texture->GetHeight(), RGBA8, EA_CPU_WRITE | EA_GPU_READ);
 	else
 		item.middle_tex = NULL;
 	

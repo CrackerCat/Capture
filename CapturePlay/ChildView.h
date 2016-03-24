@@ -28,6 +28,8 @@ public:
 	h3d::SceneCapture* scene_capture;
 	std::list<HANDLE> hKeepAlives;
 	SwsContext* sws_context;
+
+	HBITMAP hBitmap;
 // ×÷˜I
 public:
 	BOOL IterWindow(HWND hwnd);
