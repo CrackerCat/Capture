@@ -1,14 +1,21 @@
 #include "CameraCapture.h"
 #include "MemoryCapture.h"
-
 using namespace h3d;
 #ifndef _USING_V110_SDK71_
 
 #include <mfapi.h>
 #include <mfidl.h>
 #include <Mfreadwrite.h>
+#include "D3D11RenderSystem.hpp"
 
 #include <assert.h>
+
+extern "C" {
+	//ffmmpeg不能支持所有的格式，可能需要考虑写一个转换
+	//todo memory capture support R10G10B10A2
+#include <libswscale/swscale.h>
+}
+
 
 std::list<CameraInfo> h3d::GetCameraInfos()
 {
@@ -40,7 +47,7 @@ std::list<CameraInfo> h3d::GetCameraInfos()
 
 
 h3d::CameraCapture::CameraCapture(const CaptureInfo & info, unsigned int Index, CaptureCallBack callback)
-	:capture_info(info),opt_callbak(callback)
+	:capture_info(info),opt_callbak(callback), capture_tex(NULL)
 {
 	IMFAttributes* pConfig = NULL;
 	MFCreateAttributes(&pConfig, 1);
@@ -96,7 +103,11 @@ h3d::CameraCapture::CameraCapture(const CaptureInfo & info, unsigned int Index, 
 			MFGetAttributeSize(pType, MF_MT_FRAME_SIZE, &Width, &Height);
 			capture_info.oHeight = Height;
 			
-			pTex = new MemoryTexture(HDYC, Width, Height);
+			sws_context = sws_getContext(Width, Height, AV_PIX_FMT_UYVY422, Width, Height, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+			if (GetEngine().GetLevel() >= D3D_FEATURE_LEVEL_9_1)
+				capture_tex = GetEngine().GetFactory().CreateTexture(Width, Height, BGRA8, EA_CPU_WRITE | EA_GPU_READ);
+			else
+				capture_tex = new MemoryTexture(Width, Height);
 		}
 
 		if (pType)
@@ -137,14 +148,20 @@ CaptureTexture * h3d::CameraCapture::Capture()
 		BYTE* pBuffer = NULL;
 		DWORD cbCurrentLength = 0;
 		pMediaBuffer->Lock(&pBuffer, NULL, &cbCurrentLength);
-		if (pTex)
-			pTex->WriteData(pBuffer, cbCurrentLength/capture_info.oHeight);
+
+		int src_pitch = cbCurrentLength / capture_info.oHeight;
+
+		CaptureTexture::MappedData mapped = capture_tex->Map();
+		int dst_pitch = static_cast<int>(mapped.RowPitch);
+		sws_scale(sws_context, &pBuffer, &src_pitch, 0, capture_info.oHeight, &mapped.pData, &dst_pitch);
+		capture_tex->UnMap();
+
 		pMediaBuffer->Unlock();
 
 		pMediaBuffer->Release();
 		pSample->Release();
 	}
-	return pTex;
+	return capture_tex;
 }
 
 

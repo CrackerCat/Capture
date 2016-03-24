@@ -1,4 +1,5 @@
 #include "MemoryCapture.h"
+#include "D3D11RenderSystem.hpp"
 #include <sstream>
 
 extern "C" {
@@ -25,30 +26,14 @@ AVPixelFormat GetAVPixelFormat(h3d::SWAPFORMAT format) {
 
 
 #pragma warning(disable:4244)
-h3d::MemoryTexture::MemoryTexture(UINT format, SDst width, SDst height)
-	:CaptureTexture(Memory_Texture),src_format(format), cx(width), cy(height)
+h3d::MemoryTexture::MemoryTexture(SDst width, SDst height)
+	:CaptureTexture(Memory_Texture), cx(width), cy(height)
 {
-	ffmpeg_support = src_format != R10G10B10A2 && src_format != B10G10R10A2;
-	if (ffmpeg_support)
-		sws_context = sws_getContext(cx, cy, GetAVPixelFormat((SWAPFORMAT)format), cx, cy, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
-	if (src_format == R10G10B10A2) {
-		B_MASK = 0X00000FFC; //B
-		G_MASK = 0X003FF000;//G
-		R_MASK = 0XFFC00000;//R
-	}
-	if (src_format == B10G10R10A2) {
-		R_MASK = 0X00000FFC; //R
-		G_MASK = 0X003FF000;//G
-		B_MASK = 0XFFC00000;//B
-	}
-
 	native = new byte[width*height * 4];
 }
 
 h3d::MemoryTexture::~MemoryTexture()
 {
-	if (sws_context)
-		sws_freeContext((SwsContext*)sws_context);
 	delete[] native;
 }
 
@@ -65,31 +50,10 @@ h3d::MemoryTexture::MappedData h3d::MemoryTexture::Map()
 //	native = new byte[width*height * 4];
 //}
 
-void h3d::MemoryTexture::WriteData(LPBYTE pData, int pitch)
-{
-	int linear = cx * 4;
-	if (ffmpeg_support)
-		sws_scale((SwsContext*)sws_context, &pData, &pitch, 0, cy, &native, &linear);
-	else
-	{
-		for (int y = 0; y != cy; ++y) {
-			byte* dst_begin = native + y*linear;
-			int* src_begin = reinterpret_cast<int*>(pData + y*pitch);
-			for (int x = 0; x != cx; ++x) {
-				int src_pixel = *(src_begin + x);
-				dst_begin[x * 4] = src_pixel & B_MASK;  //B
-				dst_begin[x * 4 + 1] = src_pixel & G_MASK;//G
-				dst_begin[x * 4 + 2] = src_pixel & R_MASK;//R
-														  //ignore a
-			}
-		}
-	}
-}
-
 HANDLE h3d::MemoryCapture::texture_mutexs[2] = { NULL,NULL };
 
 h3d::MemoryCapture::MemoryCapture(CaptureInfo & info, CaptureCallBack callback)
-	:capture_info(info),opt_callbak(callback),pInfo(NULL),mMemory(NULL),hMemoryMap(NULL),texture(NULL)
+	:capture_info(info),opt_callbak(callback),pInfo(NULL),mMemory(NULL),hMemoryMap(NULL),texture(NULL),sws_context(NULL)
 {
 	std::wstringstream wss;
 	wss << TEXTURE_MEMORY << info.Reserved2;
@@ -108,7 +72,27 @@ h3d::MemoryCapture::MemoryCapture(CaptureInfo & info, CaptureCallBack callback)
 	TextureAddress[1] = (PBYTE)mMemory + pInfo->Reserved2;
 
 	//Create Texture
-	texture = new MemoryTexture(info.Reserved1, info.oWidth, info.oHeight);
+	if (GetEngine().GetLevel() >= D3D_FEATURE_LEVEL_9_1) {
+		texture = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight, (SWAPFORMAT)info.Reserved1, EA_CPU_WRITE | EA_GPU_READ);
+	}
+	else{
+		texture = new MemoryTexture(info.oWidth, info.oHeight);
+
+		ffmpeg_support = info.Reserved1 != R10G10B10A2 && info.Reserved1 != B10G10R10A2;
+		if (ffmpeg_support)
+			sws_context = sws_getContext(info.oWidth, info.oHeight, GetAVPixelFormat((SWAPFORMAT)info.Reserved1), info.oWidth, info.oHeight, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+		if (info.Reserved1 == R10G10B10A2) {
+			B_MASK = 0X00000FFC; //B
+			G_MASK = 0X003FF000;//G
+			R_MASK = 0XFFC00000;//R
+		}
+		if (info.Reserved1 == B10G10R10A2) {
+			R_MASK = 0X00000FFC; //R
+			G_MASK = 0X003FF000;//G
+			B_MASK = 0XFFC00000;//B
+		}
+	}
+
 }
 
 h3d::MemoryCapture::~MemoryCapture()
@@ -125,6 +109,9 @@ h3d::MemoryCapture::~MemoryCapture()
 
 	if (texture)
 		delete texture;
+
+	if (sws_context)
+		sws_freeContext((SwsContext*)sws_context);
 }
 
 #pragma warning(disable:4800)
@@ -145,8 +132,36 @@ h3d::CaptureTexture * h3d::MemoryCapture::Capture()
 		}
 
 		if (hMutex) {
-			texture->WriteData(TextureAddress[last_rendered], capture_info.Reserved4);
-
+			h3d::CaptureTexture::MappedData mapped = texture->Map();
+			if (texture->GetType() == CaptureTexture::Memory_Texture) {
+				int src_pitch = capture_info.Reserved4;
+				int dst_pitch = static_cast<int>(mapped.RowPitch);
+				if (ffmpeg_support)
+					sws_scale((SwsContext*)sws_context, &TextureAddress[last_rendered], &src_pitch, 0,capture_info.oHeight, &mapped.pData, &dst_pitch);
+				else
+				{
+					for (int y = 0; y !=capture_info.oHeight; ++y) {
+						byte* dst_begin = mapped.pData + y*dst_pitch;
+						int* src_begin = reinterpret_cast<int*>(TextureAddress[last_rendered] + y*src_pitch);
+						for (int x = 0; x != capture_info.oWidth; ++x) {
+							int src_pixel = *(src_begin + x);
+							dst_begin[x * 4] = src_pixel & B_MASK;  //B
+							dst_begin[x * 4 + 1] = src_pixel & G_MASK;//G
+							dst_begin[x * 4 + 2] = src_pixel & R_MASK;//R
+																	  //ignore a
+						}
+					}
+				}
+			}
+			else {
+				if (capture_info.Reserved4 == mapped.RowPitch)
+					memcpy(mapped.pData, TextureAddress[last_rendered], mapped.RowPitch*texture->GetHeight());
+				else
+					for (int y = 0; y != capture_info.oHeight; ++y)
+						memcpy(mapped.pData + y*mapped.RowPitch, 
+							TextureAddress[last_rendered] + y*capture_info.Reserved4, 
+							mapped.RowPitch < capture_info.Reserved4 ? mapped.RowPitch : capture_info.Reserved4);
+			}
 			ReleaseMutex(hMutex);
 		}
 	}

@@ -9,21 +9,13 @@ namespace h3d {
 	class D3D11Texture;
 
 
-	class MemoryTexture : public CaptureTexture {
+	class MemoryTexture : public CaptureTexture{
 		SDst cx;
 		SDst cy;
 
 		byte* native;
-		UINT src_format;
-
-		void* sws_context;//use ffmepg convert format
-
-		bool ffmpeg_support;
-		unsigned int R_MASK;
-		unsigned int G_MASK;
-		unsigned int B_MASK;
 	public:
-		MemoryTexture(UINT format, SDst width, SDst height);
+		MemoryTexture(SDst width, SDst height);
 		virtual ~MemoryTexture();
 
 		SDst GetWidth() const override {
@@ -35,15 +27,6 @@ namespace h3d {
 
 		MappedData Map() override;
 		void UnMap() override {
-		}
-
-		//void ReSize(SDst width, SDst height);
-
-		virtual void WriteData(LPBYTE pData, int pitch);
-
-		//这个接口用来查询硬件Texture
-		virtual D3D11Texture* Query() {
-			return nullptr;
 		}
 	};
 
@@ -59,8 +42,13 @@ namespace h3d {
 		MemoryInfo* pInfo;
 		LPBYTE TextureAddress[2];
 
-		MemoryTexture* texture;
+		CaptureTexture* texture;
 
+		void* sws_context;//use ffmepg convert format
+		bool ffmpeg_support;
+		unsigned int R_MASK;
+		unsigned int G_MASK;
+		unsigned int B_MASK;
 	public:
 		MemoryCapture(CaptureInfo & info, CaptureCallBack callback = 0);
 

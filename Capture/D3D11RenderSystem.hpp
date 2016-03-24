@@ -7,6 +7,7 @@
 
 #include <map>
 
+
 namespace h3d {
 #pragma warning(disable:4251)
 	enum EAcess {

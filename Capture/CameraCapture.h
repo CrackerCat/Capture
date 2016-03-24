@@ -6,8 +6,8 @@
 struct IMFMediaSource;
 struct IMFSourceReader;
 
+struct SwsContext;
 namespace h3d {
-	class MemoryTexture;
 
 	class H3D_API CameraCapture : public CaptureHUB {
 		CaptureCallBack opt_callbak;
@@ -16,10 +16,12 @@ namespace h3d {
 
 		CameraCapture* pImpl;
 
-		MemoryTexture* pTex;
+		CaptureTexture* capture_tex;
 
 		IMFMediaSource* pSource;
 		IMFSourceReader* pReader;
+
+		SwsContext* sws_context;
 	public:
 		CameraCapture(const CaptureInfo & info,unsigned int Index,CaptureCallBack callback = 0);
 

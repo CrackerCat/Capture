@@ -53,7 +53,8 @@ public:
 GDITexture::GDITexture(HWND hwnd,SDst width, SDst height)
 	:CaptureTexture(Memory_Texture),cx(width), cy(height)
 {
-	HDC src_hdc = ::GetDC(hwnd);
+	//使用GetDC 只抓取客户区
+	HDC src_hdc = ::GetWindowDC(hwnd);
 	compatible_dc = CreateCompatibleDC(src_hdc);
 	//must create compatible bitmap from the src_hdc
 	target_bitmap = CreateCompatibleBitmap(src_hdc, width, height);
@@ -193,7 +194,9 @@ CaptureTexture* GDICapture::Capture() {
 	GetWindowRect(hwnd, &rect);
 	SDst cx = rect.right - rect.left;
 	SDst cy = rect.bottom - rect.top;
-	auto src_hdc = GetDC(hwnd);
+
+	//使用GetDC 只抓取客户区
+	auto src_hdc = GetWindowDC(hwnd);
 
 	/*if (capture_info.oWidth == -1 || capture_info.oHeight == -1) {
 		if (capture_tex->GetWidth() != cx || capture_tex->GetHeight() != cy)
@@ -205,6 +208,8 @@ CaptureTexture* GDICapture::Capture() {
 	else
 		capture_gdi = static_cast<GDITexture*>(capture_tex);
 
+	//更改后四个参数可以决定要拷贝的区域
+	//不建议使用StretchBlt 缩放过大的区域，效果非常差
 	if (!StretchBlt(capture_gdi->GetDC(), 0, 0, capture_tex->GetWidth(),capture_tex->GetHeight(), src_hdc, 0, 0, cx, cy, SRCCOPY)) {
 		ReleaseDC(hwnd,src_hdc);
 		capture_gdi->ReleaseDC();
