@@ -107,6 +107,20 @@ namespace h3d {
 		}
 	}
 
+	inline std::wstring GetFilePath(const std::wstring& fullName) {
+		std::wstring pathName;
+
+		size_t i = fullName.rfind('\\');
+		if (i == std::wstring::npos)
+			i = i = fullName.rfind('/');
+
+		if (i != std::wstring::npos)
+			pathName = fullName.substr(0, i + 1);
+		else
+			pathName = fullName;
+
+		return pathName;
+	}
 
 	inline std::wstring GetFileNameNoExtenion(const std::wstring& fullName)
 	{
@@ -132,12 +146,12 @@ namespace h3d {
 		SYSTEMTIME st;
 		::GetLocalTime(&st);
 		//得到程序所在文件夹
-		wchar_t exeFullPath[256]; // MAX_PATH
-		GetModuleFileNameW(NULL, exeFullPath, 256);//得到程序模块名称，全路径 
-		std::wstring strPath(GetFileNameNoExtenion(exeFullPath));
-		
+		wchar_t tempPath[256]; // MAX_PATH
+		//应该保持DUMP文件至系统临时目录
+		GetTempPathW(256, tempPath);
+
 		wchar_t szFileName[1024];
-		wsprintf(szFileName, TEXT("%sERLOG_%04d%02d%02d%02d%02d%02d%02d%02d.dmp"), strPath, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds, rand() % 100);
+		wsprintf(szFileName, TEXT("%s\\CaptureHookDump%02d%02d%02d%02d.dmp"), tempPath, st.wMonth, st.wDay, st.wHour, rand() % 100);
 		CreateMiniDump(pExceptionInfo, szFileName);
 		exit(pExceptionInfo->ExceptionRecord->ExceptionCode);
 		return EXCEPTION_EXECUTE_HANDLER;    // 程序停止运行

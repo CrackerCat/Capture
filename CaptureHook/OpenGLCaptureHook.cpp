@@ -267,7 +267,6 @@ void OpenGLHDCCapture(HDC hDC)
 
 	if (hdc_acquried == NULL)
 	{
-		logstream << "setting up gl data" << std::endl;
 		//PIXELFORMATDESCRIPTOR pfd;
 
 		hwnd_acquired = ::WindowFromDC(hDC);
@@ -290,9 +289,6 @@ void OpenGLHDCCapture(HDC hDC)
 	if (hDC == hdc_acquried)
 	{
 		h3d::EventProcess();
-
-		if (!capture_run)
-			ClearGLData();
 
 		RECT rc;
 		GetClientRect(hwnd_acquired, &rc);

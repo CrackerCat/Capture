@@ -84,7 +84,7 @@ namespace h3d {
 		D3D11Factory();
 
 		D3D11Texture* CreateGDITexture(SDst Width, SDst Height);
-		D3D11Texture* CreateTexture(SDst Width, SDst Height, unsigned __int64 Handle);
+		D3D11Texture* CreateTexture(unsigned __int64 Handle);
 		D3D11Texture* CreateTexture(SDst Width, SDst Height, SWAPFORMAT Format,unsigned int access);
 
 		ID3D11ShaderResourceView* CreateSRV(ID3D11Texture2D* texture, const D3D11_SHADER_RESOURCE_VIEW_DESC & desc);

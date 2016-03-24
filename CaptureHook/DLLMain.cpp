@@ -35,10 +35,13 @@ HANDLE hInfoMap = NULL;
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved) {
 	if (dwReason == DLL_PROCESS_ATTACH) {
 		SetUnhandledExceptionFilter(h3d::GPTUnhandledExceptionFilter);
-		logstream.open("CaptureHookDebug.log", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 0X40);
+		wchar_t exeFullPath[MAX_PATH]; // MAX_PATH
+		GetModuleFileNameW(hInstance, exeFullPath, MAX_PATH);//µ√µΩdllŒª÷√
+		std::wstringstream wss;
+		wss << h3d::GetFilePath(exeFullPath) << "CaptureHook"<<GetCurrentProcessId()<<".log";
+		logstream.open(wss.str(),std::ios_base::app | std::ios_base::out);
 		hDllInstance = hInstance;
 		h3d::InitCaptureHook();
-
 		HANDLE hDllMainThread = OpenThread(THREAD_ALL_ACCESS, NULL, GetCurrentThreadId());
 		HANDLE hThread = CreateThread(NULL, 0, CaptureThread, hDllMainThread, 0, 0);
 		if (!hThread) {

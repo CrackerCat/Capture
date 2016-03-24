@@ -19,7 +19,7 @@ h3d::TextureCapture::TextureCapture(CaptureInfo & info, CaptureCallBack callback
 	}
 
 	unsigned __int64 far_handle = *reinterpret_cast<unsigned __int64*>(mMemory);
-	shared_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight, far_handle);
+	shared_tex = GetEngine().GetFactory().CreateTexture(far_handle);
 
 	capture_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight,(SWAPFORMAT)info.Reserved1 ,EA_GPU_READ);
 	//logstream << "shared_tex/capture_tex FORMAT = " << (SWAPFORMAT)info.Reserved1<<std::endl;

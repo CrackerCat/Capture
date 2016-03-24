@@ -304,14 +304,14 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateGDITexture(SDst Width, SDst Height)
 
 	ID3D11Texture2D* texture = NULL;
 	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture))) {
-		logstream << "CreateGDITexture Format : " <<FormatString(DXGI_FORMAT_B8G8R8A8_UNORM)<< std::endl;
+		logstream << "CreateGDITexture Format : " << FormatString(DXGI_FORMAT_B8G8R8A8_UNORM) << " Size : " << Width << 'X'<<Height<<std::endl;
 		return new D3D11GDITexture(texture);
 	}
 
 	return NULL;
 }
 
-h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, unsigned __int64 Handle)
+h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(unsigned __int64 Handle)
 {
 	HANDLE hShare = reinterpret_cast<HANDLE>(Handle);
 
@@ -323,7 +323,7 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, un
 			share_res->Release();
 			D3D11_TEXTURE2D_DESC desc;
 			share_tex->GetDesc(&desc);
-			logstream << "CreateSharedTexture Format : " << FormatString(desc.Format) << std::endl;
+			logstream << "CreateSharedTexture Format : " << FormatString(desc.Format) << " Size : " << desc.Width << 'X' << desc.Height << std::endl;
 			 return new D3D11Texture(share_tex);
 		}
 	}
@@ -405,7 +405,7 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, SW
 
 	ID3D11Texture2D* texture = NULL;
 	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture))) {
-		logstream << "CreateTexture Format : " << FormatString(texDesc.Format) << std::endl;
+		logstream << "CreateTexture Format : " << FormatString(texDesc.Format) << " Size : " << Width << 'X' << Height << std::endl;
 		return new D3D11Texture(texture);
 	}
 
