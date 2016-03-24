@@ -226,7 +226,7 @@ void h3d::D3D11Engine::BeginDraw(D3D11Texture * rt, BLEND_TYPE bt)
 	context->PSSetSamplers(0, 1, &draw_ps_ss);
 }
 
-void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture * src)
+void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture * src,bool flip)
 {
 	//Update VB;
 	float ndc_left_top[2] = { x / curr_vp.Width * 2.f - 1,1 - y / curr_vp.Height * 2.f};
@@ -235,6 +235,11 @@ void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Textur
 	draw_vertexs[1].x = ndc_right_bottom[0]; draw_vertexs[1].y = ndc_right_bottom[1];
 	draw_vertexs[2].x = ndc_left_top[0]; draw_vertexs[2].y = ndc_left_top[1];
 	draw_vertexs[3].x = ndc_left_top[0]; draw_vertexs[3].y = ndc_right_bottom[1];
+
+	if (flip)
+		draw_vertexs[0].v = draw_vertexs[2].v = 1.f, draw_vertexs[1].v = draw_vertexs[3].v = 0.f;
+	else
+		draw_vertexs[0].v = draw_vertexs[2].v = 0.f, draw_vertexs[1].v = draw_vertexs[3].v = 1.f;
 
 	D3D11_MAPPED_SUBRESOURCE subRes;
 	context->Map(draw_vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &subRes);

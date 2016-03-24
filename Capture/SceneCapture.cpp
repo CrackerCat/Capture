@@ -64,6 +64,7 @@ D3D11SceneCapture::~D3D11SceneCapture()
 	}
 
 	delete capture_tex;
+	delete capture_rtv;
 }
 
 #ifdef min
@@ -102,7 +103,7 @@ CaptureTexture * D3D11SceneCapture::Capture()
 		else
 			texture = static_cast<D3D11Texture*>(iter->capture->Capture());
 
-		GetEngine().Draw(0,0, texture->GetWidth(), texture->GetHeight(), texture);
+		GetEngine().Draw(0,0, texture->GetWidth(), texture->GetHeight(), texture,iter->capture->Flip());
 	}
 
 	GetEngine().EndDraw();

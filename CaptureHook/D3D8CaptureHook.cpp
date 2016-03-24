@@ -96,6 +96,7 @@ void D3D8CaptureSetup(IDirect3DDevice8* device) {
 				D3D8_captureinfo.oWidth = desc.Width;
 				D3D8_captureinfo.oHeight = desc.Height;
 				D3D8_captureinfo.Reserved1 = D3D8ConvertFormat(desc.Format);
+				D3D8_captureinfo.Flip = 0;
 			}
 		}
 		else

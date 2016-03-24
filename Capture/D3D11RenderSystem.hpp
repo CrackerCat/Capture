@@ -116,7 +116,7 @@ namespace h3d {
 		void CopyTexture(D3D11Texture* dst, D3D11Texture* src);
 
 		void BeginDraw(D3D11Texture* rt, BLEND_TYPE bt);
-		void Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture* src);
+		void Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture* src,bool flip = false);
 		void EndDraw();
 
 		D3D11Texture::MappedData Map(D3D11Texture*);

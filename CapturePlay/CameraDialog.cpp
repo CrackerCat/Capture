@@ -6,7 +6,7 @@
 #include "CameraDialog.h"
 #include "afxdialogex.h"
 
-#include "../Capture/CameraCapture.h"
+#include "../Capture/CaptureHub.h"
 
 
 // CameraDialog dialog

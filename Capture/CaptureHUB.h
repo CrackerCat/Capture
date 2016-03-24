@@ -3,6 +3,9 @@
 
 #include "CaptureTexture.h"
 
+#include <string>
+#include <list>
+
 namespace h3d {
 
 	//格式方式为DXGI书写格式[内存序]
@@ -50,6 +53,7 @@ namespace h3d {
 		unsigned int Reserved2;//mapid
 		unsigned int Reserved3;//mapsize
 		unsigned int Reserved4;//pitch
+		unsigned int Flip;//fuck opengl
 
 		unsigned int sPID;
 	};
@@ -66,6 +70,10 @@ namespace h3d {
 		virtual CaptureTexture* Capture() = 0;
 
 		virtual void Stop() = 0;
+
+		virtual bool Flip() {
+			return false;
+		}
 	};
 
 
@@ -79,6 +87,17 @@ namespace h3d {
 	bool H3D_API LoadPlugin();
 
 	void H3D_API UnLoadPlugin();
+
+#pragma warning(push)
+#pragma warning(disable:4251)
+	struct H3D_API CameraInfo
+	{
+		std::wstring Name;
+		unsigned int Index;
+	};
+#pragma warning(pop)
+
+	H3D_API std::list<CameraInfo> GetCameraInfos();
 }
 
 #define INFO_MEMORY             L"Local\\H3DInfoMemory"

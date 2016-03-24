@@ -4,6 +4,7 @@
 #include "CaptureHUB.h"
 #include <Windows.h>
 
+#pragma warning(disable:4800)
 namespace h3d {
 	class D3D11Texture;
 
@@ -69,6 +70,9 @@ namespace h3d {
 
 		void Stop() override;
 
+		bool Flip() override {
+			return  capture_info.Flip;
+		}
 	public:
 		static HANDLE texture_mutexs[2];
 	};

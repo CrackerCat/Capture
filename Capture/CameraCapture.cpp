@@ -1,4 +1,6 @@
 #include "CameraCapture.h"
+#include "MemoryCapture.h"
+
 using namespace h3d;
 #ifndef _USING_V110_SDK71_
 

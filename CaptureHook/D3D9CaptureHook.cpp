@@ -158,6 +158,7 @@ void D3D9CaptureSetup(IDirect3DDevice9* device) {
 				d3d9_captureinfo.oHeight = d3dpp.BackBufferHeight;
 				d3d9_captureinfo.sNative = reinterpret_cast<unsigned __int64>(d3dpp.hDeviceWindow);
 				d3d9_captureinfo.Reserved1 = ConvertFormat(d3dpp.BackBufferFormat);
+				d3d9_captureinfo.Flip = 0;
 			}
 		}
 		else

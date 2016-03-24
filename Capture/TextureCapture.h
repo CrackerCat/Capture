@@ -6,6 +6,7 @@
 #include "CaptureHUB.h"
 #include "D3D11RenderSystem.hpp"
 
+#pragma warning(disable:4800)
 namespace h3d {
 	class H3D_API TextureCapture : public CaptureHUB {
 		CaptureCallBack opt_callbak;
@@ -25,6 +26,10 @@ namespace h3d {
 		D3D11Texture* Capture() override;
 
 		void Stop() override;
+
+		bool Flip() override {
+			return  capture_info.Flip;
+		}
 	};
 }
 

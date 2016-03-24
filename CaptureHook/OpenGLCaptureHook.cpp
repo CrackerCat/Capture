@@ -244,8 +244,8 @@ void CreateOpenGLCPUCapture(RECT &rc)
 
 void CreateOpenGLCapture(RECT &rc)
 {
-	/*if (bFBOAvailable && nvidia_extend_support && CreateOpenGLGPUCapture(rc))
-		return;*/
+	if (bFBOAvailable && nvidia_extend_support && CreateOpenGLGPUCapture(rc))
+		return;
 
 	CreateOpenGLCPUCapture(rc);
 }
@@ -280,6 +280,7 @@ void OpenGLHDCCapture(HDC hDC)
 			target_acquired = true;
 			hdc_acquried = hDC;
 			glcaptureInfo.Reserved1 = h3d::BGRX8;
+			glcaptureInfo.Flip = 1;
 		}
 		else
 			return;

@@ -38,6 +38,7 @@ void h3d::D3D10Capture(IDXGISwapChain* pSwapChain) {
 
 		has_textured = true;
 		d3d10_captureinfo.Reserved3 = -1;
+		d3d10_captureinfo.Flip = 0;
 		*pTextureHandle = reinterpret_cast<unsigned __int64>(shared_handle);
 		logstream << "D3D10 SharedTexture Handle = 0X" << shared_handle << std::endl;
 
