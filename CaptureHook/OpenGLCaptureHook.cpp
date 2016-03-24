@@ -346,7 +346,7 @@ void OpenGLHDCCapture(HDC hDC)
 					}
 					//!GL_BGRA -> DXGI_RGBA
 					//!GL_RGBA -> DXGI_BGRA
-					glReadPixels(0, 0, glcaptureInfo.oWidth, glcaptureInfo.oHeight, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+					glReadPixels(0, 0, glcaptureInfo.oWidth, glcaptureInfo.oHeight, GL_BGRA, GL_UNSIGNED_BYTE, 0);
 
 
 					glBindBuffer(GL_PIXEL_PACK_BUFFER, gltextures[next_capture]);
