@@ -7,6 +7,9 @@
 #include <dxgi1_2.h>
 #endif
 
+static const char* FormatString(DXGI_FORMAT format);
+
+
 typedef HRESULT(WINAPI*DXGICREATEPROC)(REFIID riid, void ** ppFactory);
 typedef HRESULT(WINAPI*D3D11PROC)(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, D3D_FEATURE_LEVEL*, UINT, UINT, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D11Device** ppDevice, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** ppImmediateContext);
 
@@ -226,6 +229,8 @@ void h3d::D3D11Engine::BeginDraw(D3D11Texture * rt, BLEND_TYPE bt)
 	context->PSSetSamplers(0, 1, &draw_ps_ss);
 }
 
+#include <fstream>
+extern std::ofstream logstream;
 void h3d::D3D11Engine::Draw(SDst x, SDst y, SDst width, SDst height, D3D11Texture * src,bool flip)
 {
 	//Update VB;
@@ -298,8 +303,10 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateGDITexture(SDst Width, SDst Height)
 	texDesc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 
 	ID3D11Texture2D* texture = NULL;
-	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture)))
+	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture))) {
+		logstream << "CreateGDITexture Format : " <<FormatString(DXGI_FORMAT_B8G8R8A8_UNORM)<< std::endl;
 		return new D3D11GDITexture(texture);
+	}
 
 	return NULL;
 }
@@ -314,6 +321,9 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, un
 		ID3D11Texture2D* share_tex = NULL;
 		if (SUCCEEDED(share_res->QueryInterface(&share_tex))) {
 			share_res->Release();
+			D3D11_TEXTURE2D_DESC desc;
+			share_tex->GetDesc(&desc);
+			logstream << "CreateSharedTexture Format : " << FormatString(desc.Format) << std::endl;
 			 return new D3D11Texture(share_tex);
 		}
 	}
@@ -340,6 +350,28 @@ DXGI_FORMAT ConvertFormat(h3d::SWAPFORMAT format) {
 		return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
 	}
 	return DXGI_FORMAT_UNKNOWN;
+}
+
+static const char* FormatString(DXGI_FORMAT format) {
+	switch (format) {
+	case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
+		return "DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM";
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		return "DXGI_FORMAT_R16G16B16A16_FLOAT";
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+		return "DXGI_FORMAT_R8G8B8A8_UNORM";
+	case DXGI_FORMAT_B5G6R5_UNORM:
+		return "DXGI_FORMAT_B5G6R5_UNORM";
+	case DXGI_FORMAT_B5G5R5A1_UNORM:
+		return "DXGI_FORMAT_B5G5R5A1_UNORM";
+	case DXGI_FORMAT_B8G8R8X8_UNORM:
+		return "DXGI_FORMAT_B8G8R8X8_UNORM";
+	case DXGI_FORMAT_B8G8R8A8_UNORM:
+		return "DXGI_FORMAT_B8G8R8A8_UNORM";
+	case DXGI_FORMAT_R10G10B10A2_UNORM:
+		return "DXGI_FORMAT_R10G10B10A2_UNORM";
+	}
+	return "DXGI_FORMAT_UNKNOWN";
 }
 
 #pragma warning(disable:4244)
@@ -372,8 +404,10 @@ h3d::D3D11Texture * h3d::D3D11Factory::CreateTexture(SDst Width, SDst Height, SW
 		texDesc.CPUAccessFlags |= D3D11_CPU_ACCESS_WRITE;
 
 	ID3D11Texture2D* texture = NULL;
-	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture)))
+	if (SUCCEEDED(device->CreateTexture2D(&texDesc, NULL, &texture))) {
+		logstream << "CreateTexture Format : " << FormatString(texDesc.Format) << std::endl;
 		return new D3D11Texture(texture);
+	}
 
 	return NULL;
 }

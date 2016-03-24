@@ -1,5 +1,7 @@
 #include "TextureCapture.h"
 #include <sstream>
+//#include <fstream>
+//extern std::ofstream logstream;
 
 h3d::TextureCapture::TextureCapture(CaptureInfo & info, CaptureCallBack callback)
 	:capture_info(info),opt_callbak(callback)
@@ -20,6 +22,7 @@ h3d::TextureCapture::TextureCapture(CaptureInfo & info, CaptureCallBack callback
 	shared_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight, far_handle);
 
 	capture_tex = GetEngine().GetFactory().CreateTexture(info.oWidth, info.oHeight,(SWAPFORMAT)info.Reserved1 ,EA_GPU_READ);
+	//logstream << "shared_tex/capture_tex FORMAT = " << (SWAPFORMAT)info.Reserved1<<std::endl;
 }
 
 h3d::TextureCapture::~TextureCapture()
