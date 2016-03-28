@@ -369,7 +369,7 @@ void CChildView::OnCameraCapture()
 		if (!scene_capture)
 			scene_capture = h3d::SceneCapture::Serialize(NULL);
 
-		if (scene_capture->AddCapture("camera", h3d::GAME_CAPTURE, box.camera_index))
+		if (scene_capture->AddCapture("camera", h3d::CAMERA_CAPTURE, box.camera_index))
 			SetTimer(PAINT_TIMER, 40, 0);
 	}
 }
