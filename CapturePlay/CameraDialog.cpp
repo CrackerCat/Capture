@@ -14,7 +14,7 @@
 IMPLEMENT_DYNAMIC(CameraDialog, CDialog)
 
 CameraDialog::CameraDialog(CWnd* pParent /*=NULL*/)
-	: CDialog(IDD_CAMERADIALOG, pParent)
+	: CDialog(IDD_CAMERADIALOG, pParent), camera_index(LB_ERR)
 {
 
 }

@@ -112,9 +112,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../ffmpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DS_CAPTURE;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Mfreadwrite.lib;Mf.lib;Mfplat.lib;mfuuid.lib;libswscale/swscale.lib;libavutil/avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libswscale/swscale.lib;libavutil/avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../ffmpeg</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -136,6 +137,7 @@
       <AdditionalIncludeDirectories>../ffmpeg</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BrowseInformation>true</BrowseInformation>
+      <PreprocessorDefinitions>_WINDLL;DS_CAPTURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -199,7 +201,10 @@
     <ClInclude Include="CapturePlugin.h" />
     <ClInclude Include="CaptureTexture.h" />
     <ClInclude Include="D3D11RenderSystem.hpp" />
+    <ClInclude Include="DSDevice.h" />
     <ClInclude Include="hash.hpp" />
+    <ClInclude Include="IVideoCaptureFilter.h" />
+    <ClInclude Include="qedit.h" />
     <ClInclude Include="SceneCapture.h" />
     <ClInclude Include="TextureCapture.h" />
     <ClInclude Include="GDICapture.h" />
@@ -326,6 +331,7 @@
     </ClCompile>
     <ClCompile Include="D3D11RenderSystem.cpp" />
     <ClCompile Include="D3D11Texture.cpp" />
+    <ClCompile Include="DSDevice.cpp" />
     <ClCompile Include="GDICapture.cpp" />
     <ClCompile Include="GraphicCapture.cpp" />
     <ClCompile Include="MemoryCapture.cpp" />

@@ -103,7 +103,8 @@ CaptureTexture * D3D11SceneCapture::Capture()
 		else
 			texture = static_cast<D3D11Texture*>(iter->capture->Capture());
 
-		GetEngine().Draw(0,0, texture->GetWidth(), texture->GetHeight(), texture,iter->capture->Flip());
+		if(texture)
+			GetEngine().Draw(0,0, texture->GetWidth(), texture->GetHeight(), texture,iter->capture->Flip());
 	}
 
 	GetEngine().EndDraw();
@@ -147,7 +148,7 @@ bool D3D11SceneCapture::AddCapture(const char * name, CaptureType type, unsigned
 
 	CaptureTexture* texture = capture->Capture();
 	//warning! 1920*1080 * >= 30 FPS 可能会造成显卡带宽瓶颈
-	if (texture->GetType() == CaptureTexture::Memory_Texture)
+	if (texture && texture->GetType() == CaptureTexture::Memory_Texture)
 		item.middle_tex = GetEngine().GetFactory().CreateTexture(texture->GetWidth(), texture->GetHeight(), BGRA8, EA_CPU_WRITE | EA_GPU_READ);
 	else
 		item.middle_tex = NULL;

@@ -22,6 +22,9 @@
     <Filter Include="tinyxml">
       <UniqueIdentifier>{6d8dfeff-a888-4e78-951d-595884cfbb2e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DShow">
+      <UniqueIdentifier>{a79e4b12-ed72-4ef2-b7a1-8cc728e56628}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CaptureTexture.h">
@@ -100,6 +103,15 @@
     <ClInclude Include="tinyxml\tinyxmlhelper.h">
       <Filter>tinyxml</Filter>
     </ClInclude>
+    <ClInclude Include="qedit.h">
+      <Filter>Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="DSDevice.h">
+      <Filter>DShow</Filter>
+    </ClInclude>
+    <ClInclude Include="IVideoCaptureFilter.h">
+      <Filter>DShow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GDICapture.cpp">
@@ -158,6 +170,9 @@
     </ClCompile>
     <ClCompile Include="tinyxml\xml.cpp">
       <Filter>tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="DSDevice.cpp">
+      <Filter>DShow</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

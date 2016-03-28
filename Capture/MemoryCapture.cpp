@@ -18,8 +18,16 @@ AVPixelFormat GetAVPixelFormat(h3d::SWAPFORMAT format) {
 		return AV_PIX_FMT_RGB565;
 	case h3d::RGBA8:
 		return AV_PIX_FMT_RGBA;
-	case h3d::HDYC:
+	case h3d::HDYC: case h3d::UYVY:
 		return AV_PIX_FMT_UYVY422;
+	case h3d::YUY2:
+		return AV_PIX_FMT_YUYV422;
+	case h3d::YVYU:
+		return AV_PIX_FMT_YVYU422;
+	case h3d::YV12:
+		return AV_PIX_FMT_YUV420P;//It's error! need YVU420P
+	case h3d::I420:
+		return AV_PIX_FMT_YUV420P;
 	}
 	return AV_PIX_FMT_NONE;
 }
@@ -183,7 +191,7 @@ void h3d::MemoryCapture::Stop()
 
 
 
-#ifndef _USING_V110_SDK71_
+#ifndef DS_CAPTURE
 #include <mfapi.h>
 #endif
 
@@ -199,7 +207,7 @@ bool h3d::LoadPlugin() {
 	if (!MemoryCapture::texture_mutexs[1])
 		return false;
 
-#ifndef _USING_V110_SDK71_
+#ifndef DS_CAPTURE
 	MFStartup(MF_VERSION);
 #endif
 
@@ -215,7 +223,7 @@ void h3d::UnLoadPlugin() {
 	if (logstream.is_open())
 		logstream.close();
 
-#ifndef _USING_V110_SDK71_
+#ifndef DS_CAPTURE
 	MFShutdown();
 #endif
 }

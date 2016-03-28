@@ -26,7 +26,13 @@ namespace h3d {
 		R10G10B10XRA2,
 
 		//Camera Support Format
-		HDYC,//UYUV
+		//http://www.fourcc.org/yuv.php#UYVY
+		HDYC,//UYUV,HD Space
+		UYVY,
+		YUY2,
+		YVYU,
+		YV12,
+		I420,
 	};
 
 
@@ -94,6 +100,7 @@ namespace h3d {
 	{
 		std::wstring Name;
 		unsigned int Index;
+		std::wstring Id;
 	};
 #pragma warning(pop)
 
