@@ -1,5 +1,6 @@
 #include "MemoryCapture.h"
 #include "D3D11RenderSystem.hpp"
+#include "CPUTexture.h"
 #include <sstream>
 
 extern "C" {
@@ -31,32 +32,6 @@ AVPixelFormat GetAVPixelFormat(h3d::SWAPFORMAT format) {
 	}
 	return AV_PIX_FMT_NONE;
 }
-
-
-#pragma warning(disable:4244)
-h3d::MemoryTexture::MemoryTexture(SDst width, SDst height)
-	:CaptureTexture(Memory_Texture), cx(width), cy(height)
-{
-	native = new byte[width*height * 4];
-}
-
-h3d::MemoryTexture::~MemoryTexture()
-{
-	delete[] native;
-}
-
-h3d::MemoryTexture::MappedData h3d::MemoryTexture::Map()
-{
-	return{ native,static_cast<unsigned long>(cx * 4) };
-}
-
-//void h3d::MemoryTexture::ReSize(SDst width, SDst height)
-//{
-//	cx = width;
-//	cy = height;
-//	delete[] native;
-//	native = new byte[width*height * 4];
-//}
 
 HANDLE h3d::MemoryCapture::texture_mutexs[2] = { NULL,NULL };
 

@@ -1,5 +1,5 @@
 #include "CameraCapture.h"
-#include "MemoryCapture.h"
+#include "CPUTexture.h"
 #include "D3D11RenderSystem.hpp"
 
 #include <fstream>
@@ -195,7 +195,6 @@ CaptureTexture * h3d::CameraCapture::Capture()
 #include <atlbase.h>
 #include <atlcom.h>
 
-#include "qedit.h"
 #include "IVideoCaptureFilter.h"
 #pragma comment(lib,"Strmiids.lib")
 

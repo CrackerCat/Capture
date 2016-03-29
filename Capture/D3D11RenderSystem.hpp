@@ -4,7 +4,7 @@
 #include <d3d11.h>
 #include <dxgi.h>
 #include "CaptureHUB.h"
-
+#include "RenderSystem.h"
 #include <map>
 
 
@@ -78,8 +78,6 @@ namespace h3d {
 		IDXGISurface1* surface;
 	};
 
-	class H3D_API RenderFactory{};
-
 	class H3D_API D3D11Factory :public RenderFactory {
 	public:
 		D3D11Factory();
@@ -96,12 +94,6 @@ namespace h3d {
 		friend class D3D11Engine;
 	};
 
-	class H3D_API RenderEngine{};
-
-	enum BLEND_TYPE {
-		OVERLAY_DRAW,
-		ALPHA_DRAW
-	};
 
 	class H3D_API D3D11Engine : public RenderEngine {
 	public:

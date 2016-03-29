@@ -103,14 +103,20 @@
     <ClInclude Include="tinyxml\tinyxmlhelper.h">
       <Filter>tinyxml</Filter>
     </ClInclude>
-    <ClInclude Include="qedit.h">
-      <Filter>Capture</Filter>
-    </ClInclude>
     <ClInclude Include="DSDevice.h">
       <Filter>DShow</Filter>
     </ClInclude>
     <ClInclude Include="IVideoCaptureFilter.h">
       <Filter>DShow</Filter>
+    </ClInclude>
+    <ClInclude Include="CPURenderSystem.h">
+      <Filter>RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderSystem.h">
+      <Filter>RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="CPUTexture.h">
+      <Filter>Capture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -173,6 +179,9 @@
     </ClCompile>
     <ClCompile Include="DSDevice.cpp">
       <Filter>DShow</Filter>
+    </ClCompile>
+    <ClCompile Include="CPUTexture.cpp">
+      <Filter>Capture</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

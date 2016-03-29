@@ -200,11 +200,13 @@
     <ClInclude Include="CaptureHUB.h" />
     <ClInclude Include="CapturePlugin.h" />
     <ClInclude Include="CaptureTexture.h" />
+    <ClInclude Include="CPURenderSystem.h" />
+    <ClInclude Include="CPUTexture.h" />
     <ClInclude Include="D3D11RenderSystem.hpp" />
     <ClInclude Include="DSDevice.h" />
     <ClInclude Include="hash.hpp" />
     <ClInclude Include="IVideoCaptureFilter.h" />
-    <ClInclude Include="qedit.h" />
+    <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="SceneCapture.h" />
     <ClInclude Include="TextureCapture.h" />
     <ClInclude Include="GDICapture.h" />
@@ -329,6 +331,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="CPUTexture.cpp" />
     <ClCompile Include="D3D11RenderSystem.cpp" />
     <ClCompile Include="D3D11Texture.cpp" />
     <ClCompile Include="DSDevice.cpp" />

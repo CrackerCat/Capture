@@ -6,31 +6,6 @@
 
 #pragma warning(disable:4800)
 namespace h3d {
-	class D3D11Texture;
-
-
-	class MemoryTexture : public CaptureTexture{
-		SDst cx;
-		SDst cy;
-
-		byte* native;
-	public:
-		MemoryTexture(SDst width, SDst height);
-		virtual ~MemoryTexture();
-
-		SDst GetWidth() const override {
-			return cx;
-		}
-		SDst GetHeight() const override {
-			return cy;
-		}
-
-		MappedData Map() override;
-		void UnMap() override {
-		}
-	};
-
-
 	class MemoryCapture : public CaptureHUB {
 		CaptureCallBack opt_callbak;
 
