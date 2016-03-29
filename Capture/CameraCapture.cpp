@@ -481,11 +481,32 @@ CaptureTexture * h3d::CameraCapture::Capture()
 
 	CaptureTexture::MappedData mapped = capture_tex->Map();
 	
-	int src_pitch = curr_sample->size / capture_info.oHeight;
+	int src_pitch[] = { curr_sample->size / capture_info.oHeight,0,0};
+	BYTE* src_slice[] = { curr_sample->data,NULL,NULL };
 	int dst_pitch = static_cast<int>(mapped.RowPitch);
 
+	//todo handle bff/tff!
+	if (capture_info.Reserved1 == I420) {
+		src_pitch[0] = curr_sample->size * 2 / 3;
+		src_pitch[1] = src_pitch[0] / 2;
+		src_pitch[2] = src_pitch[0] / 2;
+
+		src_slice[1] = src_slice[0] + src_pitch[0] * capture_info.oHeight;
+		src_slice[2] = src_slice[1] + src_pitch[1] * capture_info.oHeight;
+	}
+	else if (capture_info.Reserved1 == YV12) {
+		src_pitch[0] = curr_sample->size * 2 / 3;
+		src_pitch[1] = src_pitch[0] / 2;
+		src_pitch[2] = src_pitch[0] / 2;
+
+		src_slice[1] = src_slice[0] + src_pitch[0] * capture_info.oHeight;
+		src_slice[2] = src_slice[1] + src_pitch[1] * capture_info.oHeight;
+
+		std::swap(src_slice[1], src_slice[2]);
+	}
+
 	//YV12 I420P error src_pitch should be a array contain 3 elements! data also
-	sws_scale(sws_context, &curr_sample->data, &src_pitch, 0, capture_info.oHeight, &mapped.pData, &dst_pitch);
+	sws_scale(sws_context, src_slice,src_pitch, 0, capture_info.oHeight, &mapped.pData, &dst_pitch);
 	capture_tex->UnMap();
 	SR(curr_sample);
 

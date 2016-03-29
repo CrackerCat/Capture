@@ -5,7 +5,6 @@
 #include <Windows.h>
 #include <Shlobj.h>
 
-#include "MinHook\MinHook.h"
 
 //Only A little Game Support D3D10£¬because D3D11 contains D3D10
 IDXGISwapChain* CreateDummySwapChain();
