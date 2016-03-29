@@ -226,7 +226,7 @@ HRESULT __stdcall Present(IDirect3DDevice9 *device, CONST RECT* pSourceRect, CON
 }
 
 HRESULT __stdcall PresentEx(IDirect3DDevice9Ex *device, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion, DWORD dwFlags) {
-	present.UnDo();
+	presentex.UnDo();
 
 #ifdef _DEBUG
 	//logstream << "D3D9Present called" << std::endl;
@@ -239,7 +239,7 @@ HRESULT __stdcall PresentEx(IDirect3DDevice9Ex *device, CONST RECT* pSourceRect,
 
 	HRESULT hr = device->PresentEx(pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion, dwFlags);
 
-	present.ReDo();
+	presentex.ReDo();
 
 	return hr;
 }
