@@ -19,9 +19,6 @@
     <Filter Include="RenderSystem\Shader">
       <UniqueIdentifier>{95aa480c-da97-4604-9e2c-def27098f6b6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tinyxml">
-      <UniqueIdentifier>{6d8dfeff-a888-4e78-951d-595884cfbb2e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="DShow">
       <UniqueIdentifier>{a79e4b12-ed72-4ef2-b7a1-8cc728e56628}</UniqueIdentifier>
     </Filter>
@@ -60,48 +57,6 @@
     </ClInclude>
     <ClInclude Include="SceneCapture.h">
       <Filter>Capture</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\configdispatch.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\configreader.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\ixml.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\ixmlhelper.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\ixmlutil.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\rapidxml.hpp">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\rapidxml_iterators.hpp">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\rapidxml_print.hpp">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\rapidxml_utils.hpp">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\tinystr.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\tinyutil.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\tinyxml.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\tinyxml_adapter.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="tinyxml\tinyxmlhelper.h">
-      <Filter>tinyxml</Filter>
     </ClInclude>
     <ClInclude Include="DSDevice.h">
       <Filter>DShow</Filter>
@@ -144,39 +99,6 @@
     <ClCompile Include="SceneCapture.cpp">
       <Filter>Capture</Filter>
     </ClCompile>
-    <ClCompile Include="tinyxml\configreader.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\ixmlhelper.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\ixmlutil.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinystr.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinyutil.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinyxml.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinyxml_adapter.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinyxmlerror.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinyxmlhelper.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\tinyxmlparser.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="tinyxml\xml.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
     <ClCompile Include="DSDevice.cpp">
       <Filter>DShow</Filter>
     </ClCompile>
@@ -194,16 +116,5 @@
     <FxCompile Include="DrawVS.hlsl">
       <Filter>RenderSystem\Shader</Filter>
     </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="tinyxml\rxml_attribute.inl">
-      <Filter>tinyxml</Filter>
-    </None>
-    <None Include="tinyxml\rxml_document.inl">
-      <Filter>tinyxml</Filter>
-    </None>
-    <None Include="tinyxml\rxml_node.inl">
-      <Filter>tinyxml</Filter>
-    </None>
   </ItemGroup>
 </Project>

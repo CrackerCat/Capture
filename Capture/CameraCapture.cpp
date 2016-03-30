@@ -1,7 +1,7 @@
 #include "CameraCapture.h"
 #include "CPUTexture.h"
 #include "D3D11RenderSystem.hpp"
-
+#include "CPURenderSystem.h"
 #include <fstream>
 
 extern "C" {
@@ -383,7 +383,7 @@ CameraCapture::CameraCapture(const CaptureInfo & info, unsigned int Index, Captu
 		capture_tex = GetEngine().GetFactory().CreateTexture(capture_info.oWidth, capture_info.oHeight, BGRA8, EA_CPU_WRITE | EA_GPU_READ);
 	}
 	else {
-		capture_tex = new MemoryTexture(capture_info.oWidth, capture_info.oHeight);
+		capture_tex =GetCPUEngine().GetFactory().CreateTexture(capture_info.oWidth, capture_info.oHeight);
 	}
 
 

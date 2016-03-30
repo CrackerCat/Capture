@@ -1,20 +1,10 @@
+#include "D3D11RenderSystem.hpp"
+#include "CPURenderSystem.h"
 #include "GDICapture.h"
-#include "CPUTexture.h"
-
-extern "C"
-{
-#include <libswscale/swscale.h>
-}
 
 
 using namespace h3d;
 
-
-
-
-
-
-#include "D3D11RenderSystem.hpp"
 GDICapture::GDICapture(CaptureInfo & info, CaptureCallBack callback)
 	:capture_info(info),opt_callbak(callback)
 {
@@ -38,7 +28,7 @@ GDICapture::GDICapture(CaptureInfo & info, CaptureCallBack callback)
 	if (GetEngine().GetLevel() >= D3D_FEATURE_LEVEL_9_1)
 		capture_tex = GetEngine().GetFactory().CreateGDITexture(cx, cy);
 	else
-		capture_tex = new GDITexture(hwnd, cx, cy);
+		capture_tex =GetCPUEngine().GetFactory().CreateGDITexture(hwnd, cx, cy);
 }
 
 GDICapture::~GDICapture() {
