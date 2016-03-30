@@ -63,7 +63,7 @@ h3d::MemoryCapture::MemoryCapture(CaptureInfo & info, CaptureCallBack callback)
 
 		ffmpeg_support = info.Reserved1 != R10G10B10A2 && info.Reserved1 != B10G10R10A2;
 		if (ffmpeg_support)
-			sws_context = sws_getContext(info.oWidth, info.oHeight, GetAVPixelFormat((SWAPFORMAT)info.Reserved1), info.oWidth, info.oHeight, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+			sws_context = sws_getContext(info.oWidth, info.oHeight, GetAVPixelFormat((SWAPFORMAT)info.Reserved1), info.oWidth, info.oHeight, AV_PIX_FMT_BGRA, SWS_POINT, NULL, NULL, NULL);
 		if (info.Reserved1 == R10G10B10A2) {
 			B_MASK = 0X00000FFC; //B
 			G_MASK = 0X003FF000;//G

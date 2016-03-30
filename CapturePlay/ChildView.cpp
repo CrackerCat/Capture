@@ -68,6 +68,21 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 	return TRUE;
 }
 
+void bgra_scale(h3d::CaptureTexture* capture, BYTE* pBitmapData,int pitch, int width, int height) {
+	double scale_w = capture->GetWidth() * 1.0 / width;
+	double scale_h = capture->GetHeight() * 1.0 / height;
+	h3d::CaptureTexture::MappedData mapped = capture->Map();
+	for (int y = 0; y != height; ++y) {
+		int src_y =max(static_cast<int>(capture->GetHeight()-1 - (scale_h*y + 0.5)),0);
+		for (int x = 0; x != width; ++x) {
+			int src_x =static_cast<int>(scale_w*x + 0.5);
+			memcpy(pBitmapData + y*pitch + x * 4, mapped.pData + src_y*mapped.RowPitch + src_x * 4, 4);
+		}
+	}
+	capture->UnMap();
+}
+
+
 #pragma warning(disable:4018)
 void CChildView::OnPaint() 
 {
@@ -89,12 +104,12 @@ void CChildView::OnPaint()
 		static long capture_h = texture->GetHeight();
 
 		if (!sws_context)
-			sws_context = sws_getContext(texture->GetWidth(), texture->GetHeight(), AV_PIX_FMT_BGRA, rect.Width(), rect.Height(), AV_PIX_FMT_BGRA,  SWS_LANCZOS, NULL, NULL, NULL);
+			sws_context = sws_getContext(texture->GetWidth(), texture->GetHeight(), AV_PIX_FMT_BGRA, rect.Width(), rect.Height(), AV_PIX_FMT_BGRA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 
 		if (rect.Width() != window_w || rect.Height() != window_h || capture_w != texture->GetWidth() || capture_h != texture->GetHeight())
 		{
 			sws_freeContext(sws_context);
-			sws_context = sws_getContext(texture->GetWidth(), texture->GetHeight(), AV_PIX_FMT_BGRA, rect.Width(), rect.Height(), AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+			sws_context = sws_getContext(texture->GetWidth(), texture->GetHeight(), AV_PIX_FMT_BGRA, rect.Width(), rect.Height(), AV_PIX_FMT_BGRA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 			window_w = rect.Width();
 			window_h = rect.Height();
 			capture_w = texture->GetWidth();
@@ -134,10 +149,14 @@ void CChildView::OnPaint()
 
 
 		h3d::CaptureTexture::MappedData data = texture->Map();
-		BYTE* src_slice = data.pData + (texture->GetHeight() - 1)*data.RowPitch;
-		int src_pitch = -static_cast<int>(data.RowPitch);
-		sws_scale(sws_context, &src_slice, &src_pitch, 0, texture->GetHeight(), &pBitmapData, &bitmap_pitch);
+		BYTE* src_slice[] = { data.pData + (texture->GetHeight() - 1)*data.RowPitch,NULL,NULL,NULL};
+		int src_pitch[] = { -static_cast<int>(data.RowPitch),0,0,0};
+
+		BYTE* dst_slice[] = { pBitmapData,NULL,NULL,NULL };
+		int dst_pitch[] = { bitmap_pitch,0,0,0 };
+		sws_scale(sws_context,src_slice,src_pitch, 0, texture->GetHeight(),dst_slice,dst_pitch);
 		texture->UnMap();
+		//bgra_scale(texture, pBitmapData, bitmap_pitch, rect.Width(), rect.Height());
 
 		dc.StretchBlt(0,0, rect.Width(), rect.Height(), &Dc, 0, 0,rect.Width(), rect.Height(), SRCCOPY);
 	}

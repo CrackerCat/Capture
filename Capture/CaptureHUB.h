@@ -8,32 +8,7 @@
 
 namespace h3d {
 
-	//格式方式为DXGI书写格式[内存序]
-	enum SWAPFORMAT {
-		SWAPFORMAT_UNKNOWN,
-		//D3D9 Support Format
-		R10G10B10A2,//it not supported
-		B10G10R10A2,
-		BGRA8,
-		BGRX8,
-		B5G6R5A1,
-		B5G6R5X1,
-		B5G6R5,
-
-		//D3D11 New Format
-		RGBA8,
-		RGBA16,
-		R10G10B10XRA2,
-
-		//Camera Support Format
-		//http://www.fourcc.org/yuv.php#UYVY
-		HDYC,//UYUV,HD Space
-		UYVY,
-		YUY2,
-		YVYU,
-		YV12,
-		I420,
-	};
+	
 
 
 	//捕获的目标信息 [这个结构体需要保证x86/x64一样的大]

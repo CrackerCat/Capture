@@ -376,7 +376,7 @@ CameraCapture::CameraCapture(const CaptureInfo & info, unsigned int Index, Captu
 	stop_event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	sample_thread = CreateThread(NULL, 0,(LPTHREAD_START_ROUTINE)SampleThread, this, 0, NULL);
 
-	sws_context = sws_getContext(capture_info.oWidth, capture_info.oHeight, GetAVPixelFormat((SWAPFORMAT)capture_info.Reserved1), capture_info.oWidth, capture_info.oHeight, AV_PIX_FMT_BGRA, SWS_LANCZOS, NULL, NULL, NULL);
+	sws_context = sws_getContext(capture_info.oWidth, capture_info.oHeight, GetAVPixelFormat((SWAPFORMAT)capture_info.Reserved1), capture_info.oWidth, capture_info.oHeight, AV_PIX_FMT_BGRA, SWS_POINT, NULL, NULL, NULL);
 
 	//Create Texture
 	if (GetEngine().GetLevel() >= D3D_FEATURE_LEVEL_9_1) {

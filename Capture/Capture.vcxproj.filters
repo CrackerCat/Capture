@@ -183,6 +183,9 @@
     <ClCompile Include="CPUTexture.cpp">
       <Filter>Capture</Filter>
     </ClCompile>
+    <ClCompile Include="CPURenderSystem.cpp">
+      <Filter>RenderSystem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ReslovePS.hlsl">
