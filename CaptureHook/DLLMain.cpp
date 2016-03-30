@@ -206,17 +206,18 @@ bool CpatureHook() {
 	if (!hSender)
 		return false;
 
+	bool find_something = false;
 	if (!bD3D9Capture) {
 		if (h3d::BeginD3D9CaptureHook()) {
 			bD3D9Capture = true;
-			return true;
+			find_something = true;
 		}
 	}
 
 	if (!bDXGICapture) {
 		if (h3d::BeginDXGICaptureHook()) {
 			bDXGICapture = true;
-			return true;
+			find_something = true;
 		}
 	}
 
@@ -224,18 +225,18 @@ bool CpatureHook() {
 	if (!bGLCapture) {
 		if (h3d::BeginOpenGLCapture()) {
 			bGLCapture = true;
-			return true;
+			find_something = true;
 		}
 	}
 
 	if (!bD3D8Capture) {
 		if (h3d::BeginD3D8CaptureHook()) {
 			bD3D8Capture = true;
-			return true;
+			find_something = true;
 		}
 	}
 
-	return false;
+	return find_something;
 }
 
 #ifdef _DEBUG
